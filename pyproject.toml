@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "tungsten"
+version = "0.1.0"
+description = "An MSDS parser."
+authors = ["Den4200 <dennis@dennispham.me>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+"pdfminer.six" = "^20220524"
+python = "^3.10"
+
+[tool.poetry.group.dev.dependencies]
+flake8 = "^5.0.4"
+flake8-pyproject = "1.1.0.post0"
+taskipy = "^1.10.3"
+
+[tool.flake8]
+max-line-length = 99
+
+[tool.taskipy.tasks]
+start = "python -m tungsten"
+lint = "flake8 ."
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
