@@ -14,6 +14,7 @@ python = "^3.10"
 flake8 = "^5.0.4"
 flake8-pyproject = "1.1.0.post0"
 taskipy = "^1.10.3"
+pytest = "^7.1.3"
 
 [tool.flake8]
 max-line-length = 99
@@ -21,6 +22,7 @@ max-line-length = 99
 [tool.taskipy.tasks]
 start = "python -m tungsten"
 lint = "flake8 ."
+test = "pytest"
 
 [build-system]
 requires = ["poetry-core"]
