@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from collections import deque
+
 from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTText
-from pdfminer.layout import LTItem
+from pdfminer.layout import LTComponent
 
 from dataclasses import dataclass
 from enum import Enum
@@ -26,7 +28,7 @@ def parse_sigma_aldrich(filename: str) -> HierarchyNode:
     held_element = parsing_elements.pop()
     new_node = HierarchyNode(held_element)
     hierarchy.add_child(new_node)
-    x_stack.append(held_element.x0)
+    x_stack.append(held_element.page_x0)
     node_stack.append(new_node)
 
     while len(parsing_elements) > 0:
@@ -34,11 +36,11 @@ def parse_sigma_aldrich(filename: str) -> HierarchyNode:
         held_element = parsing_elements.pop()
         held_node = node_stack.pop()
         held_x = x_stack.pop()
-        print(40 * "=" + "\nTesting Element:", held_element.name.strip())
+        print(40 * "=" + "\nTesting Element:", held_element.text_content.strip())
 
         # If the element is further to the right, push what we just popped back on the stack
         # Create a new node as a child of the node we popped
-        if held_element.x0 > held_x:
+        if held_element.page_x0 > held_x:
             print("Decision: push dict")
             # Push stuff back onto stack
             node_stack.append(held_node)
@@ -49,10 +51,10 @@ def parse_sigma_aldrich(filename: str) -> HierarchyNode:
             held_node.add_child(new_node)
             node_stack.append(new_node)
             # Push new x level, which is further to the right
-            x_stack.append(held_element.x0)
+            x_stack.append(held_element.page_x0)
         # If the element is at the same level,
         # create a new child of the top node on the node stack (same level from root)
-        elif held_element.x0 == held_x:
+        elif held_element.page_x0 == held_x:
             print("Decision: push element")
             # The x level remains the same, so push back
             x_stack.append(held_x)
@@ -63,7 +65,7 @@ def parse_sigma_aldrich(filename: str) -> HierarchyNode:
             node_stack.append(new_node)
         # If the element is further to the left,
         # then we just hold off on doing anything until the x level is equal to that of a previous level
-        elif held_element.x0 < held_x:
+        elif held_element.page_x0 < held_x:
             print("Decision: pop and wait")
             parsing_elements.append(held_element)
         # Should never happen
@@ -75,28 +77,26 @@ def parse_sigma_aldrich(filename: str) -> HierarchyNode:
 
 
 def import_parsing_elements(filename: str):
-    # Use pdfminer.six to parse out pdf items
-    pdf_items = []
-    for elements in extract_pages(filename):
-        for element in elements:
-            pdf_items.append(element)
-    # Push converted elements in reverse, such that they are popped in order (maybe use a deque for clarity?)
+    # Use pdfminer.six to parse out pdf components, to then convert and add to a list
     parsing_elements = []
-    for i in range(len(pdf_items) - 1, -1, -1):
-        parsing_elements.append(convert_to_parsing_element(pdf_items[i]))
+    page_y_offset = 0  # Amount to add to ensure y values for subsequent pages are increasingly larger
+    for page in extract_pages(filename):
+        page_length = page.y1 - page.y0
+        for component in page:
+            parsing_elements.append(ParsingElement(
+                component.x0, component.y0, component.x1, component.y1,
+                component.x0, page_y_offset + (page_length - component.y0) if component.y0 >= 0 else component.y0,
+                component.x1, page_y_offset + (page_length - component.y1) if component.y1 >= 0 else component.y1,
+                None,  # TODO Implement PDF item classification to aid figure extraction
+                component,
+                component.get_text() if isinstance(component, LTText) else "",
+                type(component).__name__
+            ))
+        page_y_offset += page_length  # Add the length of the page to the offset
+
+    parsing_elements.sort(reverse=True)
+
     return parsing_elements
-
-
-def convert_to_parsing_element(lt_item: LTItem):
-    """Bare-bones converter from LTItem to parsing element.
-    TODO Maybe wrap this into the ParsingElement constructor later
-    TODO Implement PDF item classification to aid figure extraction"""
-    return ParsingElement(lt_item.x0, lt_item.y0, lt_item.x1, lt_item.y1,
-                          None,
-                          lt_item,
-                          lt_item.get_text() if isinstance(lt_item,
-                                                           LTText) and lt_item.get_text().strip() != "" else type(
-                              lt_item).__name__)
 
 
 class HierarchyNode:
@@ -138,19 +138,27 @@ class HierarchyNode:
 @dataclass
 class ParsingElement:
     """Class used to abstract PDF objects into parsing objects"""
-    x0: float
-    y0: float
-    x1: float
-    y1: float
+    page_x0: float
+    page_y0: float
+    page_x1: float
+    page_y1: float
+    document_x0: float
+    document_y0: float
+    document_x1: float
+    document_y1: float
     type: ParsingElementType  # TODO Currently not implemented
-    element: LTItem
-    name: str
+    element: LTComponent
+    text_content: str
+    class_name: str
 
-    def __lt__(self, other):
-        return self.y0 < other.y0  # TODO replace with canon y sorting after implementation of canon y
+    def __lt__(self, other: ParsingElement):
+        if self.document_y0 != other.document_y0:
+            return self.document_y0 < other.document_y0
+        else:
+            return self.document_x0 < other.document_x0
 
     def __str__(self):
-        return self.name
+        return self.text_content if self.text_content.strip() != "" else self.class_name
 
 
 class ParsingElementType(Enum):
