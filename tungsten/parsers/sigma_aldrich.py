@@ -7,12 +7,20 @@ from pdfminer.layout import LTComponent
 from dataclasses import dataclass
 from enum import Enum
 
+from tungsten.parsers.globally_harmonized_system import GhsSafetyDataSheet
 
-def parse_sigma_aldrich(filename: str) -> HierarchyNode:
-    # Currently this program does not catch these edge cases:
-    # - An element will be further to the left than the first element, this triggers a stack underflow
+from io import IOBase
 
-    parsing_elements = import_parsing_elements(filename)
+
+def parse_sigma_aldrich(file: IOBase) -> GhsSafetyDataSheet:
+    parsing_elements = import_parsing_elements(file)
+    hierarchy = generate_initial_hierarchy(parsing_elements)
+
+
+def generate_initial_hierarchy(parsing_elements: list[ParsingElement]) -> HierarchyNode:
+    """Returns a HierarchyNode representing the initial text parse pass hierarchy based on x values.
+    Currently, this function does not catch these edge cases:
+     - An element will be further to the left than the first element, this triggers a stack underflow"""
 
     # Data Structures
     hierarchy = HierarchyNode(is_root=True)  # root node. the tree represents the parsing hierarchy
@@ -84,13 +92,13 @@ def should_skip_element(element: ParsingElement) -> bool:
     return element.text_content.strip() == ""
 
 
-def import_parsing_elements(filename: str):
+def import_parsing_elements(file: IOBase):
     # Use pdfminer.six to parse out pdf components, to then convert and add to a list
     parsing_elements = []
     page_y_offset = 0  # Amount to add to ensure y values for subsequent pages are increasingly larger
     # set line_margin=0 to separate fields
     # note that we may need to programmatically join together paragraphs later
-    for page in extract_pages(filename, laparams=LAParams(line_margin=0)):
+    for page in extract_pages(file, laparams=LAParams(line_margin=0)):
         page_length = page.y1 - page.y0
         for component in page:
             parsing_elements.append(ParsingElement(
