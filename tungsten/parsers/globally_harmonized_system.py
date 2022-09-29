@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from enum import Enum
-from dataclasses import dataclass
+from dataclasses import dataclass, is_dataclass, asdict
+from json import JSONEncoder
 
 
 @dataclass
@@ -96,6 +97,21 @@ class GhsSdsItem:
                     output += indent + line + "\n"
             direct_child_flag = True
         return output
+
+
+class GhsSdsJsonEncoder(JSONEncoder):
+    def default(self, o):
+        if isinstance(o, (GhsSafetyDataSheet, GhsSdsSection, GhsSdsSubsection, GhsSdsItem)):
+            return asdict(o)
+        if isinstance(o, (GhsSdsSectionTitle, GhsSdsSubsectionTitle, GhsSdsItemType)):
+            return o.name
+        elif isinstance(o, list):
+            return o
+        elif type(o).__name__ == "HierarchyNode":
+            new_dict = {"data": o.__dict__["data"], "children": o.__dict__["children"]}
+            return new_dict
+        else:
+            return str(o)
 
 
 class GhsSdsSectionTitle(Enum):
