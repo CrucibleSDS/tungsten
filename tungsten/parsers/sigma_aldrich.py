@@ -7,14 +7,67 @@ from pdfminer.layout import LTComponent
 from dataclasses import dataclass
 from enum import Enum
 
-from tungsten.parsers.globally_harmonized_system import GhsSafetyDataSheet
+from tungsten.parsers.globally_harmonized_system import GhsSafetyDataSheet, GhsSdsSection, GhsSdsSectionTitle, \
+    GhsSdsSubsection, GhsSdsSubsectionTitle, GhsSdsItem, GhsSdsItemType
 
+import re
 from io import IOBase
 
 
 def parse_sigma_aldrich(file: IOBase) -> GhsSafetyDataSheet:
     parsing_elements = import_parsing_elements(file)
     hierarchy = generate_initial_hierarchy(parsing_elements)
+    section_nodes = pull_node_sections(hierarchy)
+
+    ghs_sections: list[GhsSdsSection] = []
+    for i in range(13):
+        ghs_sections.append(GhsSdsSection(
+            GhsSdsSectionTitle(i + 1),
+            pull_ghs_subsections(section_nodes[i].children)
+        ))
+
+    for i in range(13, 16, 1):
+        ghs_sections.append(GhsSdsSection(
+            GhsSdsSectionTitle(i + 1),
+            [GhsSdsSubsection(
+                GhsSdsSubsectionTitle(str(i + 1) + ".1"),
+                [GhsSdsItem(GhsSdsItemType.LIST, subchild) for subchild in section_nodes[i].children]
+            )]
+        ))
+
+    ghs: GhsSafetyDataSheet = GhsSafetyDataSheet("placeholder", ghs_sections)
+    return ghs
+
+
+def pull_node_sections(hierarchy: HierarchyNode) -> list[HierarchyNode]:
+    # We assume that the GHS SDS sections are children of the root node.
+    # This may node always be the case. TODO implement level search of GHS SDS sections
+    regex_section = re.compile(r"([A-Z])+\s+\d?\d?:\s+[\w\s]+")
+    section_nodes = []
+    for child in hierarchy.children:
+        if regex_section.match(child.data.text_content) is not None:
+            section_nodes.append(child)
+        else:
+            if len(section_nodes):
+                section_nodes[-1].add_child(child)
+
+    assert len(section_nodes) == 16
+
+    return section_nodes
+
+
+def pull_ghs_subsections(section_children: list[HierarchyNode]) -> list[GhsSdsSubsection]:
+    # TODO detect/assume section type more thoroughly. Currently it is assumed that all items are LIST
+    regex_subsection = re.compile(r"(^\d?\d\.\d)\s+[\w\s]+$")
+    subsection_ghs: list[GhsSdsSubsection] = []
+    for child in section_children:
+        match = regex_subsection.match(child.data.text_content)
+        if match is not None:
+            subsection_ghs.append(GhsSdsSubsection(
+                GhsSdsSubsectionTitle(match.group(1)),
+                [GhsSdsItem(GhsSdsItemType.LIST, subchild) for subchild in child.children]
+            ))
+    return subsection_ghs
 
 
 def generate_initial_hierarchy(parsing_elements: list[ParsingElement]) -> HierarchyNode:
@@ -40,9 +93,9 @@ def generate_initial_hierarchy(parsing_elements: list[ParsingElement]) -> Hierar
     while len(parsing_elements) > 0:
         # Get next element
         held_element = parsing_elements.pop()
-        print(40 * "=" + "\nTesting Element:", held_element.text_content.strip())
+        #  print(40 * "=" + "\nTesting Element:", held_element.text_content.strip())
         if should_skip_element(held_element):
-            print("Decision: skip")
+            #  print("Decision: skip")
             continue
 
         # Element is worthy, Pop all stacks
@@ -52,7 +105,7 @@ def generate_initial_hierarchy(parsing_elements: list[ParsingElement]) -> Hierar
         # If the element is further to the right, push what we just popped back on the stack
         # Create a new node as a child of the node we popped
         if held_element.page_x0 > held_x:
-            print("Decision: push dict")
+            #  print("Decision: push dict")
             # Push stuff back onto stack
             node_stack.append(held_node)
             x_stack.append(held_x)
@@ -66,7 +119,7 @@ def generate_initial_hierarchy(parsing_elements: list[ParsingElement]) -> Hierar
         # If the element is at the same level,
         # create a new child of the top node on the node stack (same level from root)
         elif held_element.page_x0 == held_x:
-            print("Decision: push element")
+            #  print("Decision: push element")
             # The x level remains the same, so push back
             x_stack.append(held_x)
 
@@ -77,19 +130,24 @@ def generate_initial_hierarchy(parsing_elements: list[ParsingElement]) -> Hierar
         # If the element is further to the left,
         # then we just hold off on doing anything until the x level is equal to that of a previous level
         elif held_element.page_x0 < held_x:
-            print("Decision: pop and wait")
+            #  print("Decision: pop and wait")
             parsing_elements.append(held_element)
         # Should never happen
         else:
             raise Exception
-        print("X coordinate stack:", x_stack)
+        #  print("X coordinate stack:", x_stack)
 
     return hierarchy
 
 
 def should_skip_element(element: ParsingElement) -> bool:
     """Returns whether this parsing element should not be added to initial hierarchy"""
-    return element.text_content.strip() == ""
+    should_skip = False
+    # Skip if the text entry is empty
+    should_skip = should_skip or element.text_content.strip() == ""
+    # Skip if element is in footer
+    should_skip = should_skip or element.page_y0 < 125
+    return should_skip
 
 
 def import_parsing_elements(file: IOBase):
@@ -120,7 +178,7 @@ def import_parsing_elements(file: IOBase):
 class HierarchyNode:
     """Represents a node in the hierarchy of ParsingElements, may have multiple ordered children."""
     data: ParsingElement
-    children: list
+    children: list[HierarchyNode]
     is_root: bool
 
     def add_child(self, new_child: HierarchyNode):
