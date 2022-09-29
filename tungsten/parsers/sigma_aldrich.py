@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from collections import deque
-
 from pdfminer.high_level import extract_pages
-from pdfminer.layout import LTText
+from pdfminer.layout import LTText, LAParams
 from pdfminer.layout import LTComponent
 
 from dataclasses import dataclass
@@ -90,7 +88,9 @@ def import_parsing_elements(filename: str):
     # Use pdfminer.six to parse out pdf components, to then convert and add to a list
     parsing_elements = []
     page_y_offset = 0  # Amount to add to ensure y values for subsequent pages are increasingly larger
-    for page in extract_pages(filename):
+    # set line_margin=0 to separate fields
+    # note that we may need to programmatically join together paragraphs later
+    for page in extract_pages(filename, laparams=LAParams(line_margin=0)):
         page_length = page.y1 - page.y0
         for component in page:
             parsing_elements.append(ParsingElement(
