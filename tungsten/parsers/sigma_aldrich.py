@@ -32,11 +32,16 @@ def parse_sigma_aldrich(filename: str) -> HierarchyNode:
     node_stack.append(new_node)
 
     while len(parsing_elements) > 0:
-        # Pop all stacks, get next element
+        # Get next element
         held_element = parsing_elements.pop()
+        print(40 * "=" + "\nTesting Element:", held_element.text_content.strip())
+        if should_skip_element(held_element):
+            print("Decision: skip")
+            continue
+
+        # Element is worthy, Pop all stacks
         held_node = node_stack.pop()
         held_x = x_stack.pop()
-        print(40 * "=" + "\nTesting Element:", held_element.text_content.strip())
 
         # If the element is further to the right, push what we just popped back on the stack
         # Create a new node as a child of the node we popped
@@ -74,6 +79,11 @@ def parse_sigma_aldrich(filename: str) -> HierarchyNode:
         print("X coordinate stack:", x_stack)
 
     return hierarchy
+
+
+def should_skip_element(element: ParsingElement) -> bool:
+    """Returns whether this parsing element should not be added to initial hierarchy"""
+    return element.text_content.strip() == ""
 
 
 def import_parsing_elements(filename: str):
