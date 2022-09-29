@@ -23,7 +23,7 @@ max-line-length = 99
 [tool.taskipy.tasks]
 start = "python -m tungsten"
 lint = "flake8 ."
-pre-commit-install = "pre-commit install"
+pre-commit = "pre-commit install"
 test = "pytest"
 
 [build-system]
