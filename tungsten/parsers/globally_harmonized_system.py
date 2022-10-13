@@ -1,8 +1,28 @@
 from __future__ import annotations
 
+import re, enum
+from collections.abc import Iterable
 from enum import Enum
 from dataclasses import dataclass, is_dataclass, asdict
 from json import JSONEncoder
+
+
+def child_string(child_iterable, heading="", indent="| ", direct_child_indent="|-") -> str:
+    direct_child_flag = True
+
+    output = heading
+    if isinstance(child_iterable, Iterable):
+        for child in child_iterable:
+            for line in str(child).splitlines():
+                if direct_child_flag:
+                    direct_child_flag = False
+                    output += direct_child_indent + line + "\n"
+                else:
+                    output += indent + line + "\n"
+            direct_child_flag = True
+    else:
+        return str(child_iterable)
+    return output
 
 
 @dataclass
@@ -14,21 +34,7 @@ class GhsSafetyDataSheet:
     sections: list[GhsSdsSection]
 
     def __str__(self):
-        indent = "| "
-        direct_child_indent = "|-"
-        direct_child_flag = True
-
-        output = f"GHS Rev. 9, 2021 SDS Document\nName: {self.name}\nContent:\n"
-        if self.sections:
-            for subsection in self.sections:
-                for line in str(subsection).splitlines():
-                    if direct_child_flag:
-                        direct_child_flag = False
-                        output += direct_child_indent + line + "\n"
-                    else:
-                        output += indent + line + "\n"
-                direct_child_flag = True
-        return output
+        return child_string(self.sections, heading=f"GHS Rev. 9, 2021 SDS Document\nName: {self.name}\nContent:\n")
 
 
 @dataclass
@@ -37,21 +43,7 @@ class GhsSdsSection:
     subsections: list[GhsSdsSubsection]
 
     def __str__(self):
-        indent = "| "
-        direct_child_indent = "|-"
-        direct_child_flag = True
-
-        output = f"Section {self.title.name}:\nSubsections:\n"
-        if self.subsections:
-            for subsection in self.subsections:
-                for line in str(subsection).splitlines():
-                    if direct_child_flag:
-                        direct_child_flag = False
-                        output += direct_child_indent + line + "\n"
-                    else:
-                        output += indent + line + "\n"
-                direct_child_flag = True
-        return output
+        return child_string(self.subsections, heading=f"Section {self.title.name}:\nSubsections:\n")
 
 
 @dataclass
@@ -60,21 +52,7 @@ class GhsSdsSubsection:
     items: list[GhsSdsItem]
 
     def __str__(self):
-        indent = "| "
-        direct_child_indent = "|-"
-        direct_child_flag = True
-
-        output = f"Subsection {self.title.name}:\nItems:\n"
-        if self.items:
-            for subsection in self.items:
-                for line in str(subsection).splitlines():
-                    if direct_child_flag:
-                        direct_child_flag = False
-                        output += direct_child_indent + line + "\n"
-                    else:
-                        output += indent + line + "\n"
-                direct_child_flag = True
-        return output
+        return child_string(self.items, heading=f"Subsection {self.title.name}:\nItems:\n")
 
 
 @dataclass
@@ -83,20 +61,7 @@ class GhsSdsItem:
     data: any
 
     def __str__(self):
-        indent = "| "
-        direct_child_indent = "|-"
-        direct_child_flag = True
-
-        output = f"Item Type: {self.type.name}:\nItems:\n"
-        if self.data:
-            for line in str(self.data).splitlines():
-                if direct_child_flag:
-                    direct_child_flag = False
-                    output += direct_child_indent + line + "\n"
-                else:
-                    output += indent + line + "\n"
-            direct_child_flag = True
-        return output
+        return child_string(self.data, heading=f"Item Type: {self.type.name}:\nItems:\n")
 
 
 class GhsSdsJsonEncoder(JSONEncoder):
@@ -115,100 +80,185 @@ class GhsSdsJsonEncoder(JSONEncoder):
 
 
 class GhsSdsSectionTitle(Enum):
-    IDENTIFICATION = 1  # SECTION 1: Identification of the substance/mixture and of the company/undertaking
-    HAZARDS = 2  # SECTION 2: Hazards identification
-    COMPOSITION = 3  # SECTION 3: Composition/information on ingredients
-    FIRST_AID = 4  # SECTION 4: First aid measures
-    FIRE_FIGHTING = 5  # SECTION 5: Firefighting measures
-    ACCIDENTAL_RELEASE = 6  # SECTION 6: Accidental release measure
-    HANDLING_AND_STORAGE = 7  # SECTION 7: Handling and storage
-    EXPOSURE_CONTROL = 8  # SECTION 8: Exposure controls/personal protection
-    PHYSICAL_AND_CHEMICAL = 9  # SECTION 9: Physical and chemical properties
-    STABILITY_AND_REACTIVITY = 10  # SECTION 10: Stability and reactivity
-    TOXICOLOGICAL = 11  # SECTION 11: Toxicological information
-    ECOLOGICAL = 12  # SECTION 12: Ecological information
-    DISPOSAL = 13  # SECTION 13: Disposal considerations
-    TRANSPORT = 14  # SECTION 14: Transport information
-    REGULATORY = 15  # SECTION 15: Regulatory information
-    OTHER = 16  # SECTION 16: Other information
+    # SECTION 1: Identification of the substance/mixture and of the company/undertaking
+    IDENTIFICATION = re.compile(r"SECTION\s1")
+    # SECTION 2: Hazards identification
+    HAZARDS = re.compile(r"SECTION\s2")
+    # SECTION 3: Composition/information on ingredients
+    COMPOSITION = re.compile(r"SECTION\s3")
+    # SECTION 4: First aid measures
+    FIRST_AID = re.compile(r"SECTION\s4")
+    # SECTION 5: Firefighting measures
+    FIRE_FIGHTING = re.compile(r"SECTION\s5")
+    # SECTION 6: Accidental release measure
+    ACCIDENTAL_RELEASE = re.compile(r"SECTION\s6")
+    # SECTION 7: Handling and storage
+    HANDLING_AND_STORAGE = re.compile(r"SECTION\s7")
+    # SECTION 8: Exposure controls/personal protection
+    EXPOSURE_CONTROL = re.compile(r"SECTION\s8")
+    # SECTION 9: Physical and chemical properties
+    PHYSICAL_AND_CHEMICAL = re.compile(r"SECTION\s9")
+    # SECTION 10: Stability and reactivity
+    STABILITY_AND_REACTIVITY = re.compile(r"SECTION\s10")
+    # SECTION 11: Toxicological information
+    TOXICOLOGICAL = re.compile(r"SECTION\s11")
+    # SECTION 12: Ecological information
+    ECOLOGICAL = re.compile(r"SECTION\s12")
+    # SECTION 13: Disposal considerations
+    DISPOSAL = re.compile(r"SECTION\s13")
+    # SECTION 14: Transport information
+    TRANSPORT = re.compile(r"SECTION\s14")
+    # SECTION 15: Regulatory information
+    REGULATORY = re.compile(r"SECTION\s15")
+    # SECTION 16: Other information
+    OTHER = re.compile(r"SECTION\s16")
 
 
 class GhsSdsSubsectionTitle(Enum):
     # SECTION 1: Identification of the substance/mixture and of the company/undertaking
-    S1_PRODUCT_IDENTIFIER = "1.1"  # 1.1. Product identifier
-    S1_RELEVANT_USES = "1.2"  # 1.2. Relevant identified uses of the substance or mixture and uses advised against
-    S1_SUPPLIER_DETAILS = "1.3"  # 1.3. Details of the supplier of the safety data sheet
-    S1_EMERGENCY_PHONE = "1.4"  # 1.4. Emergency telephone number
+    # -Product identifier
+    S1_PRODUCT_IDENTIFIER = re.compile(r"(Product\sidentifiers)", re.IGNORECASE)
+    # -Relevant identified uses of the substance or mixture and uses advised against
+    S1_RELEVANT_USES = re.compile(r"(Relevant\sidentified\suses)", re.IGNORECASE)
+    # -Details of the supplier of the safety data sheet
+    S1_SUPPLIER_DETAILS = re.compile(r"(Details\sof\sthe\ssupplier)", re.IGNORECASE)
+    # -Emergency telephone number
+    S1_EMERGENCY_PHONE = re.compile(r"(Emergency\stelephone)", re.IGNORECASE)
+
     # SECTION 2: Hazards identification
-    S2_SUBSTANCE_CLASS = "2.1"  # 2.1. Classification of the substance or mixture
-    S2_LABEL_ELEMENTS = "2.2"  # 2.2. Label elements
-    S2_OTHER_HAZARDS = "2.3"  # 2.3. Other hazards
+    # -Classification of the substance or mixture
+    S2_SUBSTANCE_CLASS = re.compile(r"(Classification\sof\sthe\ssubstance)", re.IGNORECASE)
+    # -Label elements
+    S2_LABEL_ELEMENTS = re.compile(r"(GHS\sLabel\selements)", re.IGNORECASE)
+    # -Other hazards
+    S2_OTHER_HAZARDS = re.compile(r"(Hazards\snot\sotherwise\sclassified)", re.IGNORECASE)
+
     # SECTION 3: Composition/information on ingredients
-    S3_SUBSTANCES = "3.1"  # 3.1. Substances
-    S3_MIXTURES = "3.2"  # 3.2. Mixtures
+    # -Substances
+    S3_SUBSTANCES = re.compile(r"(Substances)", re.IGNORECASE)
+    # -Mixtures
+    S3_MIXTURES = re.compile(r"(Mixtures)", re.IGNORECASE)
+
     # SECTION 4: First aid measures
-    S4_MEASURES_DESCRIPTION = "4.1"  # 4.1. Description of first aid measures
-    S4_SYMPTOMS_AND_EFFECTS = "4.2"  # 4.2. Most important symptoms and effects, both acute and delayed
-    S4_IMMEDIATE_INDICATION = "4.3"  # 4.3. Indication of any immediate medical attention and special treatment needed
+    # -Description of first aid measures
+    S4_MEASURES_DESCRIPTION = re.compile(r"(Description\sof)", re.IGNORECASE)
+    # -Most important symptoms and effects, both acute and delayed
+    S4_SYMPTOMS_AND_EFFECTS = re.compile(r"(Most\simportant\ssymptoms)", re.IGNORECASE)
+    # -Indication of any immediate medical attention and special treatment needed
+    S4_IMMEDIATE_INDICATION = re.compile(r"(Indication\sof\sany\simmediate)", re.IGNORECASE)
+
     # SECTION 5: Firefighting measures
-    S5_EXTINGUISHING_MEDIA = "5.1"  # 5.1. Extinguishing media
-    S5_SPECIAL_HAZARDS = "5.2"  # 5.2. Special hazards arising from the substance or mixture
-    S5_FIREFIGHTER_ADVICE = "5.3"  # 5.3. Advice for firefighters
-    S5_FURTHER_INFORMATION = "5.4"
+    # -Extinguishing media
+    S5_EXTINGUISHING_MEDIA = re.compile(r"(Extinguishing\smedia)", re.IGNORECASE)
+    # -Special hazards arising from the substance or mixture
+    S5_SPECIAL_HAZARDS = re.compile(r"(Special\shazards)", re.IGNORECASE)
+    # -Advice for firefighters
+    S5_FIREFIGHTER_ADVICE = re.compile(r"(Advice\sfor\sfirefighters)", re.IGNORECASE)
+    # -Further information
+    S5_FURTHER_INFORMATION = re.compile(r"(Further\sinformation)", re.IGNORECASE)
+
     # SECTION 6: Accidental release measure
-    S6_PERSONAL_PRECAUTIONS = "6.1"  # 6.1. Personal precautions, protective equipment and emergency procedures
-    S6_ENVIRONMENTAL_PRECAUTIONS = "6.2"  # 6.2. Environmental precautions
-    S6_CONTAINMENT_CLEANUP = "6.3"  # 6.3. Methods and material for containment and cleaning up
-    S6_SECTION_REFERENCE = "6.4"  # 6.4. Reference to other sections
+    # -Personal precautions, protective equipment and emergency procedures
+    S6_PERSONAL_PRECAUTIONS = re.compile(r"(Personal\sprecautions)", re.IGNORECASE)
+    # -Environmental precautions
+    S6_ENVIRONMENTAL_PRECAUTIONS = re.compile(r"(Environmental\sprecautions)", re.IGNORECASE)
+    # -Methods and material for containment and cleaning up
+    S6_CONTAINMENT_CLEANUP = re.compile(r"(Methods\sand\smaterials)", re.IGNORECASE)
+    # -Reference to other sections
+    S6_SECTION_REFERENCE = re.compile(r"(Reference\sto\sother)", re.IGNORECASE)
+
     # SECTION 7: Handling and storage
-    S7_HANDLING_PRECAUTIONS = "7.1"  # 7.1. Precautions for safe handling
-    S7_SAFE_STORAGE = "7.2"  # 7.2. Conditions for safe storage, including any incompatibilities
-    S7_END_USE = "7.3"  # 7.3. Specific end use(s)
+    # -Precautions for safe handling
+    S7_HANDLING_PRECAUTIONS = re.compile(r"(Precautions\sfor\ssafe\shandling)", re.IGNORECASE)
+    # -Conditions for safe storage, including any incompatibilities
+    S7_SAFE_STORAGE = re.compile(r"(Conditions\sfor\ssafe\sstorage)", re.IGNORECASE)
+    # -Specific end use(s)
+    S7_END_USE = re.compile(r"(Specific\send\suse)", re.IGNORECASE)
+
     # SECTION 8: Exposure controls/personal protection
-    S8_CONTROL_PARAMETERS = "8.1"  # 8.1. Control parameters
-    S8_EXPOSURE_CONTROLS = "8.2"  # 8.2. Exposure controls
+    # -Control parameters
+    S8_CONTROL_PARAMETERS = re.compile(r"(Control\sparameters)", re.IGNORECASE)
+    # -Exposure controls
+    S8_EXPOSURE_CONTROLS = re.compile(r"(Exposure\scontrols)", re.IGNORECASE)
+
     # SECTION 9: Physical and chemical properties
-    S9_PHYSICAL_AND_CHEMICAL = "9.1"  # 9.1. Information on basic physical and chemical properties
-    S9_OTHER_INFORMATION = "9.2"  # 9.2. Other information
+    # -Information on basic physical and chemical properties
+    S9_PHYSICAL_AND_CHEMICAL = re.compile(r"(Information\son\sbasic)", re.IGNORECASE)
+    # -Other information
+    S9_OTHER_INFORMATION = re.compile(r"(Other\ssafety\sinformation)", re.IGNORECASE)
+
     # SECTION 10: Stability and reactivity
-    S10_REACTIVITY = "10.1"  # 10.1. Reactivity
-    S10_CHEMICAL_STABILITY = "10.2"  # 10.2. Chemical stability
-    S10_HAZARDOUS_REACTIONS = "10.3"  # 10.3. Possibility of hazardous reactions
-    S10_CONDITIONS_TO_AVOID = "10.4"  # 10.4. Conditions to avoid
-    S10_INCOMPATIBLE = "10.5"  # 10.5. Incompatible materials
-    S10_DECOMPOSITION_PRODUCTS = "10.6"  # 10.6. Hazardous decomposition products
+    # -Reactivity
+    S10_REACTIVITY = re.compile(r"(Reactivity)", re.IGNORECASE)
+    # -Chemical stability
+    S10_CHEMICAL_STABILITY = re.compile(r"(Chemical\sstability)", re.IGNORECASE)
+    # -Possibility of hazardous reactions
+    S10_HAZARDOUS_REACTIONS = re.compile(r"(Possibility\sof\shazardous\sreactions)", re.IGNORECASE)
+    # -Conditions to avoid
+    S10_CONDITIONS_TO_AVOID = re.compile(r"(Conditions\sto\savoid)", re.IGNORECASE)
+    # -Incompatible materials
+    S10_INCOMPATIBLE = re.compile(r"(Incompatible\smaterials)", re.IGNORECASE)
+    # -Hazardous decomposition products
+    S10_DECOMPOSITION_PRODUCTS = re.compile(r"(Hazardous\sdecomposition)", re.IGNORECASE)
+
     # SECTION 11: Toxicological information
-    S11_TOXICOLOGICAL_EFFECTS = "11.1"  # 11.1. Information on toxicological effects
-    S11_ADDITIONAL_INFORMATION = "11.2"
+    # -Information on toxicological effects
+    S11_TOXICOLOGICAL_EFFECTS = re.compile(r"(toxicological\seffects)", re.IGNORECASE)
+    #    
+    S11_ADDITIONAL_INFORMATION = re.compile(r"(Additional\sInformation)", re.IGNORECASE)
+
     # SECTION 12: Ecological information
-    S12_TOXICITY = "12.1"  # 12.1. Toxicity
-    S12_PERSISTENCE_DEGRADABILITY = "12.2"  # 12.2. Persistence and degradability
-    S12_BIOACCUMULATIVE_POTENTIAL = "12.3"  # 12.3. Bioaccumulative potential
-    S12_MOBILITY_IN_SOIL = "12.4"  # 12.4. Mobility in soil
-    S12_PBT_AND_VPVB = "12.5"  # 12.5. Results of PBT and vPvB assessment
-    S12_ENDOCRINE_DISRUPTION = "12.6"  # 12.6. Endocrine disrupting properties
-    S12_OTHER_EFFECTS = "12.7"
+    # -Toxicity
+    S12_TOXICITY = re.compile(r"(Toxicity)", re.IGNORECASE)
+    # -Persistence and degradability
+    S12_PERSISTENCE_DEGRADABILITY = re.compile(r"(Persistence\sand\sdegradability)", re.IGNORECASE)
+    # -Bioaccumulative potential
+    S12_BIOACCUMULATIVE_POTENTIAL = re.compile(r"(Bioaccumulative)", re.IGNORECASE)
+    # -Mobility in soil
+    S12_MOBILITY_IN_SOIL = re.compile(r"(Mobility\sin\ssoil)", re.IGNORECASE)
+    # -Results of PBT and vPvB assessment
+    S12_PBT_AND_VPVB = re.compile(r"(Results\sof\sPBT)", re.IGNORECASE)
+    # -Endocrine disrupting properties
+    S12_ENDOCRINE_DISRUPTION = re.compile(r"(Endocrine\sdisrupting\sproperties)", re.IGNORECASE)
+    # -Other effects
+    S12_OTHER_EFFECTS = re.compile(r"(Other\sadverse\seffects)", re.IGNORECASE)
+
     # SECTION 13: Disposal considerations
-    S13_WASTE_TREATMENT = "13.1"  # 13.1. Waste treatment methods
+    # -Waste treatment methods
+    S13_WASTE_TREATMENT = re.compile(r"(Waste\streatment)", re.IGNORECASE)
+
     # SECTION 14: Transport information
-    S14_UN_NUMBER = "14.1"  # 14.1. UN number
-    S14_UN_SHIPPING_NAME = "14.2"  # 14.2. UN proper shipping name
-    S14_HAZARD_CLASSES = "14.3"  # 14.3. Transport hazard class(es)
-    S14_PACKING_GROUP = "14.4"  # 14.4. Packing group
-    S14_ENVIRONMENTAL = "14.5"  # 14.5. Environmental hazards
-    S14_SPECIAL_PRECAUTIONS = "14.6"  # 14.6. Special precautions for user
-    S14_BULK_ANNEX_II_MARPOL_IBC = "14.7"  # 14.7. Transport in bulk according to Annex II of MARPOL and the IBC Code
+    # -UN number
+    S14_UN_NUMBER = re.compile(r"", re.IGNORECASE)
+    # -UN proper shipping name
+    S14_UN_SHIPPING_NAME = re.compile(r"", re.IGNORECASE)
+    # -Transport hazard class(es)
+    S14_HAZARD_CLASSES = re.compile(r"", re.IGNORECASE)
+    # -Packing group
+    S14_PACKING_GROUP = re.compile(r"", re.IGNORECASE)
+    # -Environmental hazards
+    S14_ENVIRONMENTAL = re.compile(r"", re.IGNORECASE)
+    # -Special precautions for user
+    S14_SPECIAL_PRECAUTIONS = re.compile(r"", re.IGNORECASE)
+    # -Transport in bulk according to Annex II of MARPOL and the IBC Code
+    S14_BULK_ANNEX_II_MARPOL_IBC = re.compile(r"", re.IGNORECASE)
+
     # SECTION 15: Regulatory information
-    S15_REGULATIONS_LEGISLATION = "15.1"  # 15.1. Safety, health and environmental regulations/legislation specific for the substance or mixture
-    S15_CHEMICAL_SAFETY = "15.2"  # 15.2. Chemical safety assessment
+    # -Safety, health and environmental regulations/legislation specific for the substance or mixture
+    S15_REGULATIONS_LEGISLATION = re.compile(r"", re.IGNORECASE)
+    # -Chemical safety assessment
+    S15_CHEMICAL_SAFETY = re.compile(r"", re.IGNORECASE)
+
     # SECTION 16: Other information
-    S16_OTHER_INFORMATION = "16.1"
-    S16_DATE_OF_REVISION = "16.2"  # 16.2. Date of the latest revision of the SDS
+    # -Other information
+    S16_OTHER_INFORMATION = re.compile(r"", re.IGNORECASE)
+    # -Date of the latest revision of the SDS
+    S16_DATE_OF_REVISION = re.compile(r"", re.IGNORECASE)
 
 
 class GhsSdsItemType(Enum):
-    TEXT = 1
-    FIELD = 2
-    LIST = 3
-    FIGURE_HAZARD = 4
-    FIGURE_OTHER = 5
+    TEXT = enum.auto()
+    FIELD = enum.auto()
+    LIST = enum.auto()
+    FIGURE_HAZARD = enum.auto()
+    FIGURE_OTHER = enum.auto()
