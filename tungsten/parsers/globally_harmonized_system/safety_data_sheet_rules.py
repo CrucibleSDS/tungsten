@@ -1,82 +1,5 @@
-from __future__ import annotations
-
-import re, enum
-from collections.abc import Iterable
+import re
 from enum import Enum
-from dataclasses import dataclass, is_dataclass, asdict
-from json import JSONEncoder
-
-
-def child_string(child_iterable, heading="", indent="| ", direct_child_indent="|-") -> str:
-    direct_child_flag = True
-
-    output = heading
-    if isinstance(child_iterable, Iterable):
-        for child in child_iterable:
-            for line in str(child).splitlines():
-                if direct_child_flag:
-                    direct_child_flag = False
-                    output += direct_child_indent + line + "\n"
-                else:
-                    output += indent + line + "\n"
-            direct_child_flag = True
-    else:
-        return str(child_iterable)
-    return output
-
-
-@dataclass
-class GhsSafetyDataSheet:
-    """An object representation of the SDS specified in GHS Rev. 9, 2021
-    (https://unece.org/transport/standards/transport/dangerous-goods/ghs-rev9-2021)
-    This aligns with OSHA Hazard Communication Standard per (https://www.osha.gov/hazcom)"""
-    name: str
-    sections: list[GhsSdsSection]
-
-    def __str__(self):
-        return child_string(self.sections, heading=f"GHS Rev. 9, 2021 SDS Document\nName: {self.name}\nContent:\n")
-
-
-@dataclass
-class GhsSdsSection:
-    title: GhsSdsSectionTitle
-    subsections: list[GhsSdsSubsection]
-
-    def __str__(self):
-        return child_string(self.subsections, heading=f"Section {self.title.name}:\nSubsections:\n")
-
-
-@dataclass
-class GhsSdsSubsection:
-    title: GhsSdsSubsectionTitle
-    items: list[GhsSdsItem]
-
-    def __str__(self):
-        return child_string(self.items, heading=f"Subsection {self.title.name}:\nItems:\n")
-
-
-@dataclass
-class GhsSdsItem:
-    type: GhsSdsItemType
-    data: any
-
-    def __str__(self):
-        return child_string(self.data, heading=f"Item Type: {self.type.name}:\nItems:\n")
-
-
-class GhsSdsJsonEncoder(JSONEncoder):
-    def default(self, o):
-        if isinstance(o, (GhsSafetyDataSheet, GhsSdsSection, GhsSdsSubsection, GhsSdsItem)):
-            return asdict(o)
-        if isinstance(o, (GhsSdsSectionTitle, GhsSdsSubsectionTitle, GhsSdsItemType)):
-            return o.name
-        elif isinstance(o, list):
-            return o
-        elif type(o).__name__ == "HierarchyNode":
-            new_dict = {"data": o.__dict__["data"], "children": o.__dict__["children"]}
-            return new_dict
-        else:
-            return str(o)
 
 
 class GhsSdsSectionTitle(Enum):
@@ -204,7 +127,7 @@ class GhsSdsSubsectionTitle(Enum):
     # SECTION 11: Toxicological information
     # -Information on toxicological effects
     S11_TOXICOLOGICAL_EFFECTS = re.compile(r"(toxicological\seffects)", re.IGNORECASE)
-    #    
+    #
     S11_ADDITIONAL_INFORMATION = re.compile(r"(Additional\sInformation)", re.IGNORECASE)
 
     # SECTION 12: Ecological information
@@ -244,7 +167,7 @@ class GhsSdsSubsectionTitle(Enum):
     S14_BULK_ANNEX_II_MARPOL_IBC = re.compile(r"", re.IGNORECASE)
 
     # SECTION 15: Regulatory information
-    # -Safety, health and environmental regulations/legislation specific for the substance or mixture
+    # -Safety, health and environmental regulations/legislation
     S15_REGULATIONS_LEGISLATION = re.compile(r"", re.IGNORECASE)
     # -Chemical safety assessment
     S15_CHEMICAL_SAFETY = re.compile(r"", re.IGNORECASE)
@@ -254,11 +177,3 @@ class GhsSdsSubsectionTitle(Enum):
     S16_OTHER_INFORMATION = re.compile(r"", re.IGNORECASE)
     # -Date of the latest revision of the SDS
     S16_DATE_OF_REVISION = re.compile(r"", re.IGNORECASE)
-
-
-class GhsSdsItemType(Enum):
-    TEXT = enum.auto()
-    FIELD = enum.auto()
-    LIST = enum.auto()
-    FIGURE_HAZARD = enum.auto()
-    FIGURE_OTHER = enum.auto()

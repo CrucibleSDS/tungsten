@@ -2,28 +2,27 @@ from __future__ import annotations
 
 from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTText, LAParams
-from pdfminer.layout import LTComponent
 
-from dataclasses import dataclass
-from enum import Enum
-
-from tungsten.parsers.globally_harmonized_system import GhsSafetyDataSheet, GhsSdsSection, GhsSdsSectionTitle, \
-    GhsSdsSubsection, GhsSdsSubsectionTitle, GhsSdsItem, GhsSdsItemType
+from tungsten.parsers.globally_harmonized_system.safety_data_sheet import GhsSafetyDataSheet,\
+    GhsSdsSection, GhsSdsSectionTitle, GhsSdsSubsection, GhsSdsSubsectionTitle, GhsSdsItem, \
+    GhsSdsItemType
 
 import re
 from io import IOBase
 
+from tungsten.parsers.parsing_hierarchy import HierarchyNode, ParsingElement
 
-def parse_sigma_aldrich(file: IOBase) -> GhsSafetyDataSheet:
+
+def parse_file(file: IOBase) -> GhsSafetyDataSheet:
     parsing_elements = import_parsing_elements(file)
     hierarchy = generate_initial_hierarchy(parsing_elements)
-    section_nodes = pull_node_sections(hierarchy)
+    section_nodes = generate_section_hierarchy(hierarchy)
 
     ghs_sections: list[GhsSdsSection] = []
     for i in range(13):
         ghs_sections.append(GhsSdsSection(
             GhsSdsSectionTitle(i + 1),
-            pull_ghs_subsections(section_nodes[i].children)
+            pull_ghs_subsections(section_nodes.children[i].children)
         ))
 
     for i in range(13, 16, 1):
@@ -31,7 +30,8 @@ def parse_sigma_aldrich(file: IOBase) -> GhsSafetyDataSheet:
             GhsSdsSectionTitle(i + 1),
             [GhsSdsSubsection(
                 GhsSdsSubsectionTitle(str(i + 1) + ".1"),
-                [GhsSdsItem(GhsSdsItemType.LIST, subchild) for subchild in section_nodes[i].children]
+                [GhsSdsItem(GhsSdsItemType.LIST, subchild)
+                 for subchild in section_nodes.children[i].children]
             )]
         ))
 
@@ -39,25 +39,26 @@ def parse_sigma_aldrich(file: IOBase) -> GhsSafetyDataSheet:
     return ghs
 
 
-def pull_node_sections(hierarchy: HierarchyNode) -> list[HierarchyNode]:
+def generate_section_hierarchy(hierarchy: HierarchyNode) -> HierarchyNode:
     # We assume that the GHS SDS sections are children of the root node.
     # This may node always be the case. TODO implement level search of GHS SDS sections
     regex_section = re.compile(r"([A-Z])+\s+\d?\d?:\s+[\w\s]+")
-    section_nodes = []
+    sds_root_node = HierarchyNode(is_root=True)
     for child in hierarchy.children:
         if regex_section.match(child.data.text_content) is not None:
-            section_nodes.append(child)
+            sds_root_node.add_child(child)
         else:
-            if len(section_nodes):
-                section_nodes[-1].add_child(child)
+            if len(sds_root_node.children):
+                sds_root_node.children[-1].add_child(child)
 
-    assert len(section_nodes) == 16
+    assert len(sds_root_node.children) == 16
 
-    return section_nodes
+    return sds_root_node
 
 
 def pull_ghs_subsections(section_children: list[HierarchyNode]) -> list[GhsSdsSubsection]:
-    # TODO detect/assume section type more thoroughly. Currently it is assumed that all items are LIST
+    # TODO detect/assume section type more thoroughly.
+    # Currently it is assumed that all items are LIST
     regex_subsection = re.compile(r"(^\d?\d\.\d)\s+[\w\s]+$")
     subsection_ghs: list[GhsSdsSubsection] = []
     for child in section_children:
@@ -71,9 +72,10 @@ def pull_ghs_subsections(section_children: list[HierarchyNode]) -> list[GhsSdsSu
 
 
 def generate_initial_hierarchy(parsing_elements: list[ParsingElement]) -> HierarchyNode:
-    """Returns a HierarchyNode representing the initial text parse pass hierarchy based on x values.
+    """Returns a HierarchyNode representing the initial text parse pass hierarchy based on x values
     Currently, this function does not catch these edge cases:
-     - An element will be further to the left than the first element, this triggers a stack underflow"""
+     - An element will be further to the left than the first element,
+     this triggers a stack underflow"""
 
     # Data Structures
     hierarchy = HierarchyNode(is_root=True)  # root node. the tree represents the parsing hierarchy
@@ -128,7 +130,8 @@ def generate_initial_hierarchy(parsing_elements: list[ParsingElement]) -> Hierar
             node_stack[-1].add_child(new_node)
             node_stack.append(new_node)
         # If the element is further to the left,
-        # then we just hold off on doing anything until the x level is equal to that of a previous level
+        # then we just hold off on doing anything
+        # until the x level is equal to that of a previous level
         elif held_element.page_x0 < held_x:
             #  print("Decision: pop and wait")
             parsing_elements.append(held_element)
@@ -153,7 +156,8 @@ def should_skip_element(element: ParsingElement) -> bool:
 def import_parsing_elements(file: IOBase):
     # Use pdfminer.six to parse out pdf components, to then convert and add to a list
     parsing_elements = []
-    page_y_offset = 0  # Amount to add to ensure y values for subsequent pages are increasingly larger
+    # Amount to add to ensure y values for subsequent pages are increasingly larger
+    page_y_offset = 0
     # set line_margin=0 to separate fields
     # note that we may need to programmatically join together paragraphs later
     for page in extract_pages(file, laparams=LAParams(line_margin=0)):
@@ -161,8 +165,10 @@ def import_parsing_elements(file: IOBase):
         for component in page:
             parsing_elements.append(ParsingElement(
                 component.x0, component.y0, component.x1, component.y1,
-                component.x0, page_y_offset + (page_length - component.y0) if component.y0 >= 0 else component.y0,
-                component.x1, page_y_offset + (page_length - component.y1) if component.y1 >= 0 else component.y1,
+                component.x0, page_y_offset + (page_length - component.y0)
+                if component.y0 >= 0 else component.y0,
+                component.x1, page_y_offset + (page_length - component.y1)
+                if component.y1 >= 0 else component.y1,
                 None,  # TODO Implement PDF item classification to aid figure extraction
                 component,
                 component.get_text() if isinstance(component, LTText) else "",
@@ -173,72 +179,3 @@ def import_parsing_elements(file: IOBase):
     parsing_elements.sort(reverse=True)
 
     return parsing_elements
-
-
-class HierarchyNode:
-    """Represents a node in the hierarchy of ParsingElements, may have multiple ordered children."""
-    data: ParsingElement
-    children: list[HierarchyNode]
-    is_root: bool
-
-    def add_child(self, new_child: HierarchyNode):
-        if new_child.is_root:
-            raise ValueError("The child of a hierarchy node cannot be a root node.")
-        self.children.append(new_child)
-
-    def __init__(self, data: ParsingElement = None, is_root: bool = False):
-        self.data = data
-        self.children = []
-        self.is_root = is_root
-
-    def __str__(self):
-        indent = "| "  # The general indent to denote child elements
-        direct_child_indent = "|-"  # The indent used on the first line of a direct child of the node
-        direct_child_flag = True
-
-        # The first line should always be string representation of data, unless it's the root node.
-        output = ("<ROOT>" if self.is_root else str(self.data).strip()) + ":\n"
-
-        # Recursively generate the string representation of the hierarchy
-        for child in self.children:
-            for line in str(child).splitlines():
-                if direct_child_flag:
-                    direct_child_flag = False
-                    output += direct_child_indent + line + "\n"
-                else:
-                    output += indent + line + "\n"
-            direct_child_flag = True
-        return output
-
-
-@dataclass
-class ParsingElement:
-    """Class used to abstract PDF objects into parsing objects"""
-    page_x0: float
-    page_y0: float
-    page_x1: float
-    page_y1: float
-    document_x0: float
-    document_y0: float
-    document_x1: float
-    document_y1: float
-    type: ParsingElementType  # TODO Currently not implemented
-    element: LTComponent
-    text_content: str
-    class_name: str
-
-    def __lt__(self, other: ParsingElement):
-        if self.document_y0 != other.document_y0:
-            return self.document_y0 < other.document_y0
-        else:
-            return self.document_x0 < other.document_x0
-
-    def __str__(self):
-        return self.text_content if self.text_content.strip() != "" else self.class_name
-
-
-class ParsingElementType(Enum):
-    """TODO currently unused, enums are placeholders (FIX!), planned for use during figure extraction"""
-    TEXT = 1
-    VECTOR = 2
-    RASTER = 3
