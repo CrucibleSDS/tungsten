@@ -17,8 +17,8 @@ def main() -> None:
         start = time.perf_counter()
         sds_name = files[i].split(sep=".")[0]
         # noinspection PyTypeChecker
-        ghs_sds = SigmaAldrichSdsParser().parse(open(paths[i], "rb", buffering=0),
-                                                sds_name=sds_name)
+        ghs_sds = SigmaAldrichSdsParser().parse_to_ghs_sds(open(paths[i], "rb", buffering=0),
+                                                           sds_name=sds_name)
         file = open("./output/" + sds_name + ".json", "w")
         json.dump(asdict(ghs_sds), file, cls=GhsSdsJsonEncoder, skipkeys=True)
         file.close()

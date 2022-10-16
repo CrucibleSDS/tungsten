@@ -11,7 +11,9 @@ from json import JSONEncoder
 class GhsSafetyDataSheet:
     """An object representation of the SDS specified in GHS Rev. 9, 2021
     (https://unece.org/transport/standards/transport/dangerous-goods/ghs-rev9-2021)
-    This aligns with OSHA Hazard Communication Standard per (https://www.osha.gov/hazcom)"""
+    This aligns with OSHA Hazard Communication Standard per (https://www.osha.gov/hazcom)
+    Note that the UN GHS SDS structure is a representation of the SDS document itself, and not
+    necessarily a structured representation of all fields and data."""
     name: str
     sections: list[GhsSdsSection]
 
@@ -22,6 +24,7 @@ class GhsSafetyDataSheet:
 
 @dataclass
 class GhsSdsSection:
+    """Representation of a GHS SDS section in :class:`GhsSafetyDataSheet`"""
     title: GhsSdsSectionTitle
     subsections: list[GhsSdsSubsection]
 
@@ -32,6 +35,7 @@ class GhsSdsSection:
 
 @dataclass
 class GhsSdsSubsection:
+    """Representation of a GHS SDS subsection within a :class:`GhsSdsSection`"""
     title: GhsSdsSubsectionTitle
     items: list[GhsSdsItem]
     raw_title: str
@@ -42,6 +46,11 @@ class GhsSdsSubsection:
 
 @dataclass
 class GhsSdsItem:
+    """Representation of the data contained in a GHS SDS subsection (:class:`GhsSdsSubsection`).
+    This may come in the form of a field value, several field values, tables, etc.
+    (This is specified in :class:`GhsSdsItemType`, though the current listing is temporary).
+    Note that the UN GHS SDS structure is a representation of the SDS document itself, and not
+    necessarily a structured representation of all fields and data."""
     type: GhsSdsItemType
     data: any
 
@@ -65,6 +74,8 @@ class GhsSdsJsonEncoder(JSONEncoder):
 
 
 class GhsSdsSectionTitle(Enum):
+    """Common enum representation of section titles specified in the UN GHS Rev. 9, 2021
+    (https://unece.org/transport/standards/transport/dangerous-goods/ghs-rev9-2021)"""
     # SECTION 1: Identification of the substance or mixture and of the supplier
     IDENTIFICATION = enum.auto()
     # SECTION 2: Hazards identification
@@ -100,6 +111,8 @@ class GhsSdsSectionTitle(Enum):
 
 
 class GhsSdsSubsectionTitle(Enum):
+    """Common enum representation of subsection titles specified in the UN GHS Rev. 9, 2021
+    (https://unece.org/transport/standards/transport/dangerous-goods/ghs-rev9-2021)"""
     # SECTION 1: Identification of the substance or mixture and of the supplier
     # - (a) GHS Product identifier
     GHS_PRODUCT_IDENTIFIER = enum.auto()
@@ -319,6 +332,8 @@ class GhsSdsSubsectionTitle(Enum):
 
 
 class GhsSdsItemType(Enum):
+    """Type of the specific data contained within a :class:`GhsSdsItem`. Subject to change."""
+    # TODO may be changed in the future
     TEXT = enum.auto()
     FIELD = enum.auto()
     LIST = enum.auto()
@@ -327,6 +342,7 @@ class GhsSdsItemType(Enum):
 
 
 def child_string(child_iterable, heading="", indent="| ", direct_child_indent="|-") -> str:
+    """Stringifies items in the iterable and joins them together into a string representation."""
     direct_child_flag = True
 
     output = heading

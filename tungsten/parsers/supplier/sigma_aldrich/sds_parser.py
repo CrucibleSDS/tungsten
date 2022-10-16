@@ -20,7 +20,7 @@ class SigmaAldrichSdsParser(SdsParser):
     def __init__(self):
         self.sds_rules = SigmaAldrichGhsSdsRules()
 
-    def parse(self, io: IOBase, sds_name="default") -> GhsSafetyDataSheet:
+    def parse_to_ghs_sds(self, io: IOBase, sds_name="default") -> GhsSafetyDataSheet:
         parsing_elements = self.import_parsing_elements(io)
         hierarchy = self.generate_initial_hierarchy(parsing_elements)
         section_node = self.generate_section_hierarchy(hierarchy)
@@ -33,6 +33,9 @@ class SigmaAldrichSdsParser(SdsParser):
         return ghs_sds
 
     def generate_section_hierarchy(self, hierarchy: HierarchyNode) -> HierarchyNode:
+        """In a Sigma-Aldrich SDS, the sections are at the same x-level as the subsections.
+        It's useful to have subsection nodes underneath the section nodes, so this method fulfills
+        this purpose."""
         # We assume that the GHS SDS sections are children of the root node.
         # This may node always be the case. TODO implement level search of GHS SDS sections
         sds_root_node = HierarchyNode(is_root=True)
@@ -46,6 +49,8 @@ class SigmaAldrichSdsParser(SdsParser):
         return sds_root_node
 
     def identify_ghs_sections(self, sds_children: list[HierarchyNode]) -> list[GhsSdsSection]:
+        """Applies the rules specified in :class:`SigmaAldrichGhsSdsRules` to create list of
+        :class:`GhsSdsSection` objects from :class:`HierarchyNode` objects."""
         ghs_sections: list[GhsSdsSection] = []
         for child in sds_children:
             if self.sds_rules.is_section(child.data.text_content):
@@ -59,6 +64,11 @@ class SigmaAldrichSdsParser(SdsParser):
 
     def identify_ghs_subsections(self, section_children: list[HierarchyNode],
                                  context: GhsSdsSectionTitle) -> list[GhsSdsSubsection]:
+        """Applies the rules specified in :class:`SigmaAldrichGhsSdsRules` to create list of
+        :class:`GhsSdsSubection` objects from :class:`HierarchyNode` objects.
+        Note that this method requires a `context` :class:`GhsSdsSectionTitle`, as the ruleset
+        requires this to be able to identify subsections. (This is to prevent incorrectly matching
+        a subsection of another section,)"""
         # TODO detect/assume section type more thoroughly.
         # Currently, it is assumed that all items are LIST
         ghs_subsections: list[GhsSdsSubsection] = []
@@ -97,9 +107,7 @@ class SigmaAldrichSdsParser(SdsParser):
         while len(parsing_elements) > 0:
             # Get next element
             held_element = parsing_elements.pop()
-            #  print(40 * "=" + "\nTesting Element:", held_element.text_content.strip())
             if self.should_skip_element(held_element):
-                #  print("Decision: skip")
                 continue
 
             # Element is worthy, Pop all stacks
@@ -109,7 +117,6 @@ class SigmaAldrichSdsParser(SdsParser):
             # If the element is further to the right, push what we just popped back on the stack
             # Create a new node as a child of the node we popped
             if held_element.page_x0 > held_x:
-                #  print("Decision: push dict")
                 # Push stuff back onto stack
                 node_stack.append(held_node)
                 x_stack.append(held_x)
@@ -123,7 +130,6 @@ class SigmaAldrichSdsParser(SdsParser):
             # If the element is at the same level,
             # create a new child of the top node on the node stack (same level from root)
             elif held_element.page_x0 == held_x:
-                #  print("Decision: push element")
                 # The x level remains the same, so push back
                 x_stack.append(held_x)
 
@@ -135,17 +141,17 @@ class SigmaAldrichSdsParser(SdsParser):
             # then we just hold off on doing anything
             # until the x level is equal to that of a previous level
             elif held_element.page_x0 < held_x:
-                #  print("Decision: pop and wait")
                 parsing_elements.append(held_element)
             # Should never happen
             else:
                 raise Exception
-            #  print("X coordinate stack:", x_stack)
 
         return hierarchy
 
-    def should_skip_element(self, element: ParsingElement) -> bool:
-        """Returns whether this parsing element should not be added to initial hierarchy"""
+    @staticmethod
+    def should_skip_element(element: ParsingElement) -> bool:
+        """Returns whether this parsing element should not be added to initial hierarchy.
+        Currently, all elements which are non-text data, or within the footer are removed."""
         should_skip = False
         # Skip if the text entry is empty
         should_skip = should_skip or element.text_content.strip() == ""
@@ -153,14 +159,17 @@ class SigmaAldrichSdsParser(SdsParser):
         should_skip = should_skip or element.page_y0 < 125
         return should_skip
 
-    def import_parsing_elements(self, file: IOBase):
+    @staticmethod
+    def import_parsing_elements(io: IOBase) -> list[ParsingElement]:
+        """Given an IOBase, returns a list of :class:`ParsingElement` objects that represent
+        elements within the PDF of the Sigma-Aldrich SDS."""
         # Use pdfminer.six to parse out pdf components, to then convert and add to a list
         parsing_elements = []
         # Amount to add to ensure y values for subsequent pages are increasingly larger
         page_y_offset = 0
         # set line_margin=0 to separate fields
         # note that we may need to programmatically join together paragraphs later
-        for page in pdfm.extract_pages(file, laparams=LAParams(line_margin=0)):
+        for page in pdfm.extract_pages(io, laparams=LAParams(line_margin=0)):
             page_length = page.y1 - page.y0
             for component in page:
                 parsing_elements.append(ParsingElement(
