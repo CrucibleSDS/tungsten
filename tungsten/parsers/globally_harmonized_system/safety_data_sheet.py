@@ -2,27 +2,9 @@ from __future__ import annotations
 
 import enum
 from collections.abc import Iterable
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from enum import Enum
 from json import JSONEncoder
-
-
-def child_string(child_iterable, heading="", indent="| ", direct_child_indent="|-") -> str:
-    direct_child_flag = True
-
-    output = heading
-    if isinstance(child_iterable, Iterable):
-        for child in child_iterable:
-            for line in str(child).splitlines():
-                if direct_child_flag:
-                    direct_child_flag = False
-                    output += direct_child_indent + line + "\n"
-                else:
-                    output += indent + line + "\n"
-            direct_child_flag = True
-    else:
-        return str(child_iterable)
-    return output
 
 
 @dataclass
@@ -341,3 +323,21 @@ class GhsSdsItemType(Enum):
     LIST = enum.auto()
     FIGURE_HAZARD = enum.auto()
     FIGURE_OTHER = enum.auto()
+
+
+def child_string(child_iterable, heading="", indent="| ", direct_child_indent="|-") -> str:
+    direct_child_flag = True
+
+    output = heading
+    if isinstance(child_iterable, Iterable):
+        for child in child_iterable:
+            for line in str(child).splitlines():
+                if direct_child_flag:
+                    direct_child_flag = False
+                    output += direct_child_indent + line + "\n"
+                else:
+                    output += indent + line + "\n"
+            direct_child_flag = True
+    else:
+        return str(child_iterable)
+    return output

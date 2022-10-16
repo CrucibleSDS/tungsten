@@ -1,42 +1,43 @@
 from __future__ import annotations
 
-from pdfminer.high_level import extract_pages
-from pdfminer.layout import LTText, LAParams
-
-from tungsten.parsers.globally_harmonized_system.safety_data_sheet import GhsSafetyDataSheet,\
-    GhsSdsSection, GhsSdsSectionTitle, GhsSdsSubsection, GhsSdsSubsectionTitle, GhsSdsItem, \
-    GhsSdsItemType
-
 import re
 from io import IOBase
 
+import pdfminer.high_level as pdfm
+from pdfminer.layout import LAParams, LTText
+
+from tungsten.parsers.globally_harmonized_system.safety_data_sheet import (
+    GhsSafetyDataSheet, GhsSdsItem, GhsSdsItemType, GhsSdsSection,
+    GhsSdsSectionTitle, GhsSdsSubsection, GhsSdsSubsectionTitle)
 from tungsten.parsers.parsing_hierarchy import HierarchyNode, ParsingElement
+from tungsten.parsers.sds_parser import SdsParser
 
 
-def parse_file(file: IOBase) -> GhsSafetyDataSheet:
-    parsing_elements = import_parsing_elements(file)
-    hierarchy = generate_initial_hierarchy(parsing_elements)
-    section_nodes = generate_section_hierarchy(hierarchy)
+class SigmaAldrichSdsParser(SdsParser):
+    def parse(self, io: IOBase) -> GhsSafetyDataSheet:
+        parsing_elements = import_parsing_elements(io)
+        hierarchy = generate_initial_hierarchy(parsing_elements)
+        section_nodes = generate_section_hierarchy(hierarchy)
 
-    ghs_sections: list[GhsSdsSection] = []
-    for i in range(13):
-        ghs_sections.append(GhsSdsSection(
-            GhsSdsSectionTitle(i + 1),
-            pull_ghs_subsections(section_nodes.children[i].children)
-        ))
+        ghs_sections: list[GhsSdsSection] = []
+        for i in range(13):
+            ghs_sections.append(GhsSdsSection(
+                GhsSdsSectionTitle(i + 1),
+                identify_ghs_subsections(section_nodes.children[i].children)
+            ))
 
-    for i in range(13, 16, 1):
-        ghs_sections.append(GhsSdsSection(
-            GhsSdsSectionTitle(i + 1),
-            [GhsSdsSubsection(
-                GhsSdsSubsectionTitle(str(i + 1) + ".1"),
-                [GhsSdsItem(GhsSdsItemType.LIST, subchild)
-                 for subchild in section_nodes.children[i].children]
-            )]
-        ))
+        for i in range(13, 16, 1):
+            ghs_sections.append(GhsSdsSection(
+                GhsSdsSectionTitle(i + 1),
+                [GhsSdsSubsection(
+                    GhsSdsSubsectionTitle(str(i + 1) + ".1"),
+                    [GhsSdsItem(GhsSdsItemType.LIST, subchild)
+                     for subchild in section_nodes.children[i].children]
+                )]
+            ))
 
-    ghs: GhsSafetyDataSheet = GhsSafetyDataSheet("placeholder", ghs_sections)
-    return ghs
+        ghs: GhsSafetyDataSheet = GhsSafetyDataSheet("placeholder", ghs_sections)
+        return ghs
 
 
 def generate_section_hierarchy(hierarchy: HierarchyNode) -> HierarchyNode:
@@ -56,7 +57,7 @@ def generate_section_hierarchy(hierarchy: HierarchyNode) -> HierarchyNode:
     return sds_root_node
 
 
-def pull_ghs_subsections(section_children: list[HierarchyNode]) -> list[GhsSdsSubsection]:
+def identify_ghs_subsections(section_children: list[HierarchyNode]) -> list[GhsSdsSubsection]:
     # TODO detect/assume section type more thoroughly.
     # Currently it is assumed that all items are LIST
     regex_subsection = re.compile(r"(^\d?\d\.\d)\s+[\w\s]+$")
@@ -160,7 +161,7 @@ def import_parsing_elements(file: IOBase):
     page_y_offset = 0
     # set line_margin=0 to separate fields
     # note that we may need to programmatically join together paragraphs later
-    for page in extract_pages(file, laparams=LAParams(line_margin=0)):
+    for page in pdfm.extract_pages(file, laparams=LAParams(line_margin=0)):
         page_length = page.y1 - page.y0
         for component in page:
             parsing_elements.append(ParsingElement(

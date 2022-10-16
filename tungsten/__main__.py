@@ -1,10 +1,12 @@
 import json
 import os
 import time
-
-from tungsten.parsers.globally_harmonized_system.safety_data_sheet import GhsSdsJsonEncoder
-from tungsten.parsers.sigma_aldrich import parse_file
 from dataclasses import asdict
+
+from tungsten.parsers.globally_harmonized_system.safety_data_sheet import \
+    GhsSdsJsonEncoder
+from tungsten.parsers.supplier.sigma_aldrich.sigma_aldrich_sds_parser import \
+    parse
 
 
 def main() -> None:
@@ -14,7 +16,7 @@ def main() -> None:
     for i in range(len(paths)):
         start = time.perf_counter()
         # noinspection PyTypeChecker
-        ghssds = parse_file(open(paths[i], "rb", buffering=0))
+        ghssds = parse(open(paths[i], "rb", buffering=0))
         file = open("./output/" + files[i].split(sep=".")[0] + ".json", "w")
         json.dump(asdict(ghssds), file, cls=GhsSdsJsonEncoder, skipkeys=True)
         file.close()

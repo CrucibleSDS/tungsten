@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import enum
 from dataclasses import dataclass
 from enum import Enum
-import enum
 
 from pdfminer.layout import LTComponent
 
@@ -74,7 +74,7 @@ class ParsingElement:
 
 
 class ParsingElementType(Enum):
-    """TODO currently unused, enums are placeholders (FIX!),
+    """!!TODO currently unused, enums are placeholders (FIX!),
     planned for use during figure extraction"""
     TEXT = enum.auto()
     VECTOR = enum.auto()
