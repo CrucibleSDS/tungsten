@@ -7,5 +7,5 @@ from tungsten.parsers.globally_harmonized_system.safety_data_sheet import \
 
 class SdsParser(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def parse(self, io: IOBase) -> GhsSafetyDataSheet:
+    def parse(self, io: IOBase, sds_name="default") -> GhsSafetyDataSheet:
         pass

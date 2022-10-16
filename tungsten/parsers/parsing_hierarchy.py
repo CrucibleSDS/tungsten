@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import enum
 from dataclasses import dataclass
-from enum import Enum
 
 from pdfminer.layout import LTComponent
 
@@ -58,7 +56,6 @@ class ParsingElement:
     document_y0: float
     document_x1: float
     document_y1: float
-    type: ParsingElementType  # TODO Currently not implemented
     element: LTComponent
     text_content: str
     class_name: str
@@ -71,11 +68,3 @@ class ParsingElement:
 
     def __str__(self):
         return self.text_content if self.text_content.strip() != "" else self.class_name
-
-
-class ParsingElementType(Enum):
-    """!!TODO currently unused, enums are placeholders (FIX!),
-    planned for use during figure extraction"""
-    TEXT = enum.auto()
-    VECTOR = enum.auto()
-    RASTER = enum.auto()

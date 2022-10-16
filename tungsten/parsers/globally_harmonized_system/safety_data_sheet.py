@@ -34,6 +34,7 @@ class GhsSdsSection:
 class GhsSdsSubsection:
     title: GhsSdsSubsectionTitle
     items: list[GhsSdsItem]
+    raw_title: str
 
     def __str__(self):
         return child_string(self.items, heading=f"Subsection {self.title.name}:\nItems:\n")
