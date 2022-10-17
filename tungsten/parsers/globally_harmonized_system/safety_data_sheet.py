@@ -6,6 +6,8 @@ from dataclasses import asdict, dataclass
 from enum import Enum
 from json import JSONEncoder
 
+from tungsten.parsers.parsing_hierarchy import HierarchyNode
+
 
 @dataclass
 class GhsSafetyDataSheet:
@@ -59,16 +61,15 @@ class GhsSdsItem:
 
 
 class GhsSdsJsonEncoder(JSONEncoder):
-    def default(self, o):
+    def default(self, o: any):
         if isinstance(o, (GhsSafetyDataSheet, GhsSdsSection, GhsSdsSubsection, GhsSdsItem)):
             return asdict(o)
         if isinstance(o, (GhsSdsSectionTitle, GhsSdsSubsectionTitle, GhsSdsItemType)):
             return o.name
         elif isinstance(o, list):
             return o
-        elif type(o).__name__ == "HierarchyNode":
-            new_dict = {"data": o.__dict__["data"], "children": o.__dict__["children"]}
-            return new_dict
+        elif isinstance(o, HierarchyNode):
+            return {"data": o.data, "children": o.children}
         else:
             return str(o)
 
