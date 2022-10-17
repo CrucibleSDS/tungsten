@@ -6,8 +6,13 @@ import pdfminer.high_level as pdfm
 from pdfminer.layout import LAParams, LTText
 
 from tungsten.parsers.globally_harmonized_system.safety_data_sheet import (
-    GhsSafetyDataSheet, GhsSdsItem, GhsSdsItemType, GhsSdsSection,
-    GhsSdsSectionTitle, GhsSdsSubsection)
+    GhsSafetyDataSheet,
+    GhsSdsItem,
+    GhsSdsItemType,
+    GhsSdsSection,
+    GhsSdsSectionTitle,
+    GhsSdsSubsection,
+)
 from tungsten.parsers.parsing_hierarchy import HierarchyNode, ParsingElement
 from tungsten.parsers.sds_parser import SdsParser
 from tungsten.parsers.supplier.sigma_aldrich.safety_data_sheet_rules import \
@@ -62,8 +67,11 @@ class SigmaAldrichSdsParser(SdsParser):
                 ))
         return ghs_sections
 
-    def identify_ghs_subsections(self, section_children: list[HierarchyNode],
-                                 context: GhsSdsSectionTitle) -> list[GhsSdsSubsection]:
+    def identify_ghs_subsections(
+        self,
+        section_children: list[HierarchyNode],
+        context: GhsSdsSectionTitle,
+    ) -> list[GhsSdsSubsection]:
         """Applies the rules specified in :class:`SigmaAldrichGhsSdsRules` to create list of
         :class:`GhsSdsSubection` objects from :class:`HierarchyNode` objects.
         Note that this method requires a `context` :class:`GhsSdsSectionTitle`, as the ruleset

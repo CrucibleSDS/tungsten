@@ -4,9 +4,13 @@ import re
 from typing import AnyStr
 
 from tungsten.parsers.globally_harmonized_system.safety_data_sheet import (
-    GhsSdsSectionTitle, GhsSdsSubsectionTitle)
+    GhsSdsSectionTitle,
+    GhsSdsSubsectionTitle,
+)
 from tungsten.parsers.globally_harmonized_system.safety_data_sheet_rules import (
-    GhsSdsRules, SubsectionDiscriminatorRules)
+    GhsSdsRules,
+    SubsectionDiscriminatorRules,
+)
 
 
 class SigmaAldrichGhsSdsRules(GhsSdsRules):
