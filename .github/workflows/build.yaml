@@ -1,0 +1,20 @@
+name: Build & Publish
+
+on:
+  push:
+    tags:
+      - v*.*.*
+
+jobs:
+  build-publish:
+    name: Build & Publish to PyPi
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Build and publish to pypi
+        uses: JRubics/poetry-publish@v1.13
+        with:
+          pypi_token: ${{ secrets.PYPI_TOKEN }}
