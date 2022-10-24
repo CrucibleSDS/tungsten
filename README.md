@@ -6,13 +6,13 @@
     <p align="center">A material safety data sheet parser.</p>
 </div>
 
-# Installation
+## Installation
 Tungsten is available on PyPi via pip. To install, run the following command:
 ```sh
 pip install tungsten-sds
 ```
 
-# Usage Example
+## Usage Example
 ```python
 from pathlib import Path
 
@@ -30,6 +30,6 @@ with open(sds_path.stem + ".json", "w") as f:
     sds.dump(f)
 ```
 
-# License
+## License
 This work is licensed under MIT. Media assets in the `assets` directory are licensed under a
 Creative Commons Attribution-NoDerivatives 4.0 International Public License.
