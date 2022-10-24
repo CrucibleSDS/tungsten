@@ -8,7 +8,6 @@ readme = "README.md"
 repository = "https://github.com/Den4200/tungsten"
 keywords = ["sds", "parser"]
 packages = [{ include = "tungsten" }]
-include = ["assets"]
 
 [tool.poetry.dependencies]
 "pdfminer.six" = "^20220524"
