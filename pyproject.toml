@@ -5,6 +5,7 @@ description = "An MSDS parser."
 authors = ["Dennis Pham <dennis@dennispham.me>", "Brian Lu <me@greencappuccino.net>"]
 license = "MIT"
 readme = "README.md"
+packages = [{ include = "tungsten" }]
 
 [tool.poetry.dependencies]
 "pdfminer.six" = "^20220524"
