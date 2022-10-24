@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import enum
+import json
 from collections.abc import Iterable
 from dataclasses import asdict, dataclass
 from enum import Enum
 from json import JSONEncoder
+from typing import IO
 
 from tungsten.parsers.parsing_hierarchy import HierarchyNode
 
@@ -22,6 +24,18 @@ class GhsSafetyDataSheet:
     def __str__(self):
         return child_string(self.sections, heading=f"GHS Rev. 9, 2021 SDS Document\n"
                                                    f"Name: {self.name}\nContent:\n")
+
+    def to_dict(self):
+        """Convert to a dictionary."""
+        return asdict(self)
+
+    def dump(self, fp: IO[str], **kwargs: dict) -> None:
+        """Serialize as a JSON formatted stream to `fp`."""
+        json.dump(self.to_dict(), fp, cls=GhsSdsJsonEncoder, **kwargs)
+
+    def dumps(self, **kwargs: dict) -> str:
+        """Serialize to a JSON formatted `str`."""
+        return json.dumps(self.to_dict(), cls=GhsSdsJsonEncoder, **kwargs)
 
 
 @dataclass
