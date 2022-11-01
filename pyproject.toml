@@ -12,6 +12,7 @@ packages = [{ include = "tungsten" }]
 [tool.poetry.dependencies]
 "pdfminer.six" = "^20220524"
 python = "^3.10"
+tabula-py = "^2.5.1"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^5.0.4"

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from io import IOBase
+from typing import IO
 
 import pdfminer.high_level as pdfm
 from pdfminer.layout import LAParams, LTText
@@ -17,6 +18,7 @@ from tungsten.parsers.parsing_hierarchy import HierarchyNode, ParsingElement
 from tungsten.parsers.sds_parser import SdsParser
 from tungsten.parsers.supplier.sigma_aldrich.safety_data_sheet_rules import \
     SigmaAldrichGhsSdsRules
+from tungsten.parsers.supplier.sigma_aldrich.table_injector import SigmaAldrichTableInjector
 
 
 class SigmaAldrichSdsParser(SdsParser):
@@ -25,7 +27,8 @@ class SigmaAldrichSdsParser(SdsParser):
     def __init__(self):
         self.sds_rules = SigmaAldrichGhsSdsRules()
 
-    def parse_to_ghs_sds(self, io: IOBase, sds_name="default") -> GhsSafetyDataSheet:
+    def parse_to_ghs_sds(self, io: IO[bytes], sds_name="default") -> GhsSafetyDataSheet:
+        # noinspection PyTypeChecker
         parsing_elements = self.import_parsing_elements(io)
         hierarchy = self.generate_initial_hierarchy(parsing_elements)
         section_node = self.generate_section_hierarchy(hierarchy)
@@ -34,6 +37,8 @@ class SigmaAldrichSdsParser(SdsParser):
             sds_name,
             self.identify_ghs_sections(section_node.children)
         )
+
+        SigmaAldrichTableInjector().generate_injections(io)
 
         return ghs_sds
 
