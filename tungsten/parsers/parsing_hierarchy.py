@@ -48,6 +48,7 @@ class HierarchyNode:
 @dataclass
 class ParsingElement:
     """Class used to abstract PDF objects into parsing objects"""
+    page_num: int
     page_x0: float
     page_y0: float
     page_x1: float

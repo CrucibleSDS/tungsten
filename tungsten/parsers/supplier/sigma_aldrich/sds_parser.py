@@ -12,13 +12,16 @@ from tungsten.parsers.globally_harmonized_system.safety_data_sheet import (
     GhsSdsItemType,
     GhsSdsSection,
     GhsSdsSectionTitle,
-    GhsSdsSubsection,
+    GhsSdsSubsection
 )
 from tungsten.parsers.parsing_hierarchy import HierarchyNode, ParsingElement
 from tungsten.parsers.sds_parser import SdsParser
-from tungsten.parsers.supplier.sigma_aldrich.safety_data_sheet_rules import \
+from tungsten.parsers.supplier.sigma_aldrich.safety_data_sheet_rules import (
     SigmaAldrichGhsSdsRules
-from tungsten.parsers.supplier.sigma_aldrich.table_injector import SigmaAldrichTableInjector
+)
+from tungsten.parsers.supplier.sigma_aldrich.table_injector import (
+    SigmaAldrichTableInjector
+)
 
 
 class SigmaAldrichSdsParser(SdsParser):
@@ -182,10 +185,12 @@ class SigmaAldrichSdsParser(SdsParser):
         page_y_offset = 0
         # set line_margin=0 to separate fields
         # note that we may need to programmatically join together paragraphs later
+        page_number = 1
         for page in pdfm.extract_pages(io, laparams=LAParams(line_margin=0)):
             page_length = page.y1 - page.y0
             for component in page:
                 parsing_elements.append(ParsingElement(
+                    page_number,
                     component.x0, component.y0, component.x1, component.y1,
                     component.x0, page_y_offset + (page_length - component.y0)
                     if component.y0 >= 0 else component.y0,
@@ -196,6 +201,7 @@ class SigmaAldrichSdsParser(SdsParser):
                     type(component).__name__
                 ))
             page_y_offset += page_length  # Add the length of the page to the offset
+            page_number += 1
 
         parsing_elements.sort(reverse=True)
 

@@ -1,12 +1,13 @@
 from __future__ import annotations
+
 import abc
 import enum
-from io import IOBase
 from dataclasses import dataclass
 from typing import IO
 
-from tungsten.parsers.globally_harmonized_system.safety_data_sheet import \
+from tungsten.parsers.globally_harmonized_system.safety_data_sheet import (
     GhsSafetyDataSheet
+)
 from tungsten.parsers.parsing_hierarchy import HierarchyNode
 
 
@@ -22,12 +23,15 @@ class SdsParserInjector(metaclass=abc.ABCMeta):
     def generate_injections(self, io: IO[bytes]) -> list[Injection]:
         pass
 
-    def injection_hook(self, injections: list[Injection]):
+    def injection_hook(self, injections: list[Injection], root: HierarchyNode):
         pass
 
 
 @dataclass
 class Injection:
+    page_num: int
+    x: float
+    y: float
     xl_case: InjectionOverwriteBoundaryCase
     xr_case: InjectionOverwriteBoundaryCase
     yl_case: InjectionOverwriteBoundaryCase
