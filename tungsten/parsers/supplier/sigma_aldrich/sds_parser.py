@@ -14,7 +14,7 @@ from tungsten.parsers.globally_harmonized_system.safety_data_sheet import (
     GhsSdsSectionTitle,
     GhsSdsSubsection
 )
-from tungsten.parsers.parsing_hierarchy import HierarchyNode, ParsingElement
+from tungsten.parsers.parsing_hierarchy import HierarchyElement, HierarchyNode
 from tungsten.parsers.sds_parser import SdsParser
 from tungsten.parsers.supplier.sigma_aldrich.safety_data_sheet_rules import (
     SigmaAldrichGhsSdsRules
@@ -29,20 +29,21 @@ class SigmaAldrichSdsParser(SdsParser):
 
     def __init__(self):
         self.sds_rules = SigmaAldrichGhsSdsRules()
+        self.register_injector(SigmaAldrichTableInjector())
 
-    def parse_to_ghs_sds(self, io: IO[bytes], sds_name="default") -> GhsSafetyDataSheet:
+    def _parse_to_hierarchy(self, io: IO[bytes]) -> HierarchyNode:
         # noinspection PyTypeChecker
         parsing_elements = self.import_parsing_elements(io)
         hierarchy = self.generate_initial_hierarchy(parsing_elements)
         section_node = self.generate_section_hierarchy(hierarchy)
+        print(section_node)
+        return section_node
 
+    def _hierarchy_to_ghs_sds(self, root: HierarchyNode) -> GhsSafetyDataSheet:
         ghs_sds = GhsSafetyDataSheet(
-            sds_name,
-            self.identify_ghs_sections(section_node.children)
+            name="default",  # TODO figure out what to do with names
+            sections=self.identify_ghs_sections(root.children)
         )
-
-        SigmaAldrichTableInjector().generate_injections(io)
-
         return ghs_sds
 
     def generate_section_hierarchy(self, hierarchy: HierarchyNode) -> HierarchyNode:
@@ -58,7 +59,6 @@ class SigmaAldrichSdsParser(SdsParser):
             else:
                 if len(sds_root_node.children):
                     sds_root_node.children[-1].add_child(child)
-
         return sds_root_node
 
     def identify_ghs_sections(self, sds_children: list[HierarchyNode]) -> list[GhsSdsSection]:
@@ -76,9 +76,9 @@ class SigmaAldrichSdsParser(SdsParser):
         return ghs_sections
 
     def identify_ghs_subsections(
-        self,
-        section_children: list[HierarchyNode],
-        context: GhsSdsSectionTitle,
+            self,
+            section_children: list[HierarchyNode],
+            context: GhsSdsSectionTitle,
     ) -> list[GhsSdsSubsection]:
         """Applies the rules specified in :class:`SigmaAldrichGhsSdsRules` to create list of
         :class:`GhsSdsSubection` objects from :class:`HierarchyNode` objects.
@@ -98,7 +98,8 @@ class SigmaAldrichSdsParser(SdsParser):
             ))
         return ghs_subsections
 
-    def generate_initial_hierarchy(self, parsing_elements: list[ParsingElement]) -> HierarchyNode:
+    def generate_initial_hierarchy(self,
+                                   parsing_elements: list[HierarchyElement]) -> HierarchyNode:
         """Returns a HierarchyNode representing the initial text parse pass hierarchy based on x
         Currently, this function does not catch these edge cases:
          - An element will be further to the left than the first element,
@@ -165,7 +166,7 @@ class SigmaAldrichSdsParser(SdsParser):
         return hierarchy
 
     @staticmethod
-    def should_skip_element(element: ParsingElement) -> bool:
+    def should_skip_element(element: HierarchyElement) -> bool:
         """Returns whether this parsing element should not be added to initial hierarchy.
         Currently, all elements which are non-text data, or within the footer are removed."""
         should_skip = False
@@ -176,29 +177,35 @@ class SigmaAldrichSdsParser(SdsParser):
         return should_skip
 
     @staticmethod
-    def import_parsing_elements(io: IOBase) -> list[ParsingElement]:
+    def import_parsing_elements(io: IOBase) -> list[HierarchyElement]:
         """Given an IOBase, returns a list of :class:`ParsingElement` objects that represent
         elements within the PDF of the Sigma-Aldrich SDS."""
         # Use pdfminer.six to parse out pdf components, to then convert and add to a list
         parsing_elements = []
         # Amount to add to ensure y values for subsequent pages are increasingly larger
         page_y_offset = 0
+        # Keep track of page number
+        page_number = 1
         # set line_margin=0 to separate fields
         # note that we may need to programmatically join together paragraphs later
-        page_number = 1
         for page in pdfm.extract_pages(io, laparams=LAParams(line_margin=0)):
             page_length = page.y1 - page.y0
             for component in page:
-                parsing_elements.append(ParsingElement(
-                    page_number,
-                    component.x0, component.y0, component.x1, component.y1,
-                    component.x0, page_y_offset + (page_length - component.y0)
+                parsing_elements.append(HierarchyElement(
+                    page_num=page_number,
+                    page_x0=component.x0,
+                    page_y0=component.y0,
+                    page_x1=component.x1,
+                    page_y1=component.y1,
+                    document_x0=component.x0,
+                    document_y0=page_y_offset + (page_length - component.y0)
                     if component.y0 >= 0 else component.y0,
-                    component.x1, page_y_offset + (page_length - component.y1)
+                    document_x1=component.x1,
+                    document_y1=page_y_offset + (page_length - component.y1)
                     if component.y1 >= 0 else component.y1,
-                    component,
-                    component.get_text() if isinstance(component, LTText) else "",
-                    type(component).__name__
+                    element=component,
+                    text_content=component.get_text() if isinstance(component, LTText) else "",
+                    class_name=type(component).__name__
                 ))
             page_y_offset += page_length  # Add the length of the page to the offset
             page_number += 1

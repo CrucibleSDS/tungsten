@@ -6,7 +6,14 @@ from typing import IO
 
 import tabula
 
-from tungsten.parsers.sds_parser import Injection, SdsParserInjector
+from tungsten.parsers.parsing_hierarchy import HierarchyElement
+from tungsten.parsers.sds_parser import (
+    CoordinateType,
+    Injection,
+    InjectionBox,
+    InjectionOverwriteBoundaryMode,
+    SdsParserInjector
+)
 
 
 class SigmaAldrichTableInjector(SdsParserInjector):
@@ -51,6 +58,35 @@ class SigmaAldrichTableInjector(SdsParserInjector):
                          f"{time.perf_counter() - start_time} seconds.")
 
         injections: list[Injection] = []
+        hardcoded_page_len_ltr: float = 841.92  # TODO do not do this this is bad this is temporary
+        # hardcoded_page_wid_ltr: float = 595.32  TODO do not do this this is bad this is temporary
+        for table in tables:
+            injections.append(Injection(
+                boxes=[InjectionBox(
+                    page_num=table.page_number,
+                    x0=table.left,
+                    y0=hardcoded_page_len_ltr - table.bottom,
+                    x1=table.left + table.width,
+                    y1=hardcoded_page_len_ltr - table.top,
+                    coord_type=CoordinateType.PAGE
+                )],
+                mode=InjectionOverwriteBoundaryMode.INTERSECTS,
+                payload=HierarchyElement(
+                    page_num=table.page_number,
+                    page_x0=table.left,
+                    page_y0=hardcoded_page_len_ltr - table.bottom,
+                    page_x1=table.left + table.width,
+                    page_y1=hardcoded_page_len_ltr - table.top,
+                    document_x0=table.page_number * hardcoded_page_len_ltr + table.left,
+                    document_y0=table.page_number * hardcoded_page_len_ltr + table.bottom,
+                    document_x1=table.page_number * hardcoded_page_len_ltr + table.left +
+                    table.width,
+                    document_y1=table.page_number * hardcoded_page_len_ltr + table.top,
+                    class_name=TabulaTable.__name__,
+                    element=table,
+                    text_content=str(table)
+                )
+            ))
 
         return injections
 
