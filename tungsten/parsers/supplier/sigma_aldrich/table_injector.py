@@ -10,7 +10,6 @@ from tungsten.parsers.sds_parser import Injection, SdsParserInjector
 
 
 class SigmaAldrichTableInjector(SdsParserInjector):
-
     logger: logging.Logger
 
     def __init__(self):
@@ -41,10 +40,12 @@ class SigmaAldrichTableInjector(SdsParserInjector):
             table.strip_text()
             # Tables seem to have dividers between rows when line spacing >12.5 pt.
             table.merge_rows(line_threshold=12.5)
+            # Extract remarks to not mess with other tabled data
+            table.extract_remarks()
             # Assume that empty cells are references to above cells
             table.pull_down_to_empty()
             # Remove rows with remaining empty cells
-            table.delete_rows_with_empty()
+            # table.delete_rows_with_empty()
             self.logger.debug(f"Cleaned: {table}")
         self.logger.info(f"Found {len(tables)} tables in "
                          f"{time.perf_counter() - start_time} seconds.")
@@ -69,6 +70,7 @@ class TabulaTable:
     width: float  # Width of table, in points
     height: float  # Height of table, in points
     data: list[list[TabulaTableCell]]  # Double-dimensioned in rows[columns[cell]]
+    remarks: dict[int, str]  # Dictionary of "Remarks" rows and a reference to the row # above
     additional_ops: list[str]  # Log of additional post-processing operations after Tabula export
 
     def __init__(self, json_dict: dict):
@@ -84,6 +86,7 @@ class TabulaTable:
             [TabulaTableCell(cell) for cell in row
              ] for row in json_dict["data"]
         ]
+        self.remarks = {}
         self.additional_ops = []
 
     def strip_text(self):
@@ -115,8 +118,20 @@ class TabulaTable:
         self.additional_ops.append("merge_rows")
 
     def extract_remarks(self):
-        """Removes rows containing remarks and places then into a new "Remarks" column."""
-        pass
+        """Removes rows containing remarks and places then into the remarks dictionary"""
+        i: int = 1
+        while i < len(self.data):
+            is_remark: bool = False
+            for j in range(len(self.data[i])):
+                if "Remarks" in self.data[i][j].text:
+                    is_remark = True
+                    remark = " ".join(
+                        [self.data[i][k].text for k in range(j + 1, len(self.data[i]))])
+                    self.remarks[i - 1] = remark
+                    self.data.pop(i)
+                    break
+            if not is_remark:
+                i += 1
 
     def pull_down_to_empty(self):
         """Pulls down the value of the cell above if the current cell is empty. Does not pull down
@@ -160,10 +175,10 @@ class TabulaTable:
             divider += "+\n"
             # Generate the table
             output += divider
-            for row in self.data:
-                for i in range(len(row)):
-                    output += f"|{row[i].text.ljust(max_row_lengths[i])}"
-                output += "|\n"
+            for i in range(len(self.data)):
+                for j in range(len(self.data[i])):
+                    output += f"|{self.data[i][j].text.ljust(max_row_lengths[j])}"
+                output += f"|{'Remarks: ' + self.remarks[i] if i in self.remarks else ''}\n"
                 output += divider
         output += f", additional_ops={str(self.additional_ops)})"
         return output
