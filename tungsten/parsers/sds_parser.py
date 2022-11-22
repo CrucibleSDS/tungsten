@@ -114,35 +114,20 @@ class SdsParser(metaclass=abc.ABCMeta):
             for i in range(len(root.children) - 1, 0, -1):
                 if exit_flag:
                     break
-                p_stack: list[tuple[HierarchyNode, int]] = []
-                workroot = root.children[i]
-                root_i = 0
-                while (workroot is not None or len(p_stack) != 0) and not exit_flag:
-                    if workroot is not None:
-                        p_stack.append((workroot, root_i))
-                        root_i = 0
-                        if len(workroot.children) >= 1:
-                            workroot = workroot.children[0]
-                        else:
-                            workroot = None
-                        continue
-                    hand = p_stack.pop()
-                    if box.y1 <= hand[0].data.page_y0 and box.page_num == hand[0].data.page_num:
-                        hand[0].add_child(HierarchyNode(injection.payload))
+                stack = [root.children[i]]
+                order = []
+                while len(stack) != 0:
+                    hand = stack.pop()
+                    order.append(hand)
+                    for child in hand.children:
+                        stack.append(child)
+                order.reverse()
+                for element in order:
+                    if box.y1 <= element.data.page_y0 \
+                            and box.page_num == element.data.page_num:
+                        element.add_child(HierarchyNode(injection.payload))
                         exit_flag = True
                         break
-
-                    while len(p_stack) != 0 and hand[1] == len(p_stack[-1][0].children) - 1:
-                        hand = p_stack.pop()
-                        if box.y1 <= hand[0].data.page_y0 \
-                                and box.page_num == hand[0].data.page_num:
-                            hand[0].add_child(HierarchyNode(injection.payload))
-                            exit_flag = True
-                            break
-
-                    if len(p_stack) != 0:
-                        workroot = p_stack[-1][0].children[hand[1] + 1]
-                        root_i = hand[1] + 1
 
 
 class SdsParserInjector(metaclass=abc.ABCMeta):
