@@ -57,6 +57,14 @@ class SigmaAldrichTableInjector(SdsParserInjector):
         self.logger.info(f"Found {len(tables)} tables in "
                          f"{time.perf_counter() - start_time} seconds.")
 
+        i: int = 0
+        while i < len(tables):
+            if self.reject_table(tables[i]):
+                self.logger.debug(f"Rejected: {tables[i]}")
+                tables.pop(i)
+            else:
+                i += 1
+
         injections: list[Injection] = []
         hardcoded_page_len_ltr: float = 841.92  # TODO do not do this this is bad this is temporary
         # hardcoded_page_wid_ltr: float = 595.32  TODO do not do this this is bad this is temporary
@@ -92,7 +100,9 @@ class SigmaAldrichTableInjector(SdsParserInjector):
 
     @staticmethod
     def reject_table(table: TabulaTable) -> bool:
-        return False
+        # TODO this is a temporary solution
+        # TODO reject more tables that are false positives
+        return table.data[1][0].text.strip()[1] == ")"
 
 
 class TabulaTable:
