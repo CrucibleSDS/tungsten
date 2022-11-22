@@ -55,6 +55,10 @@ class HierarchyElement:
     element: any
     text_content: str
     class_name: str
+    to_delete: bool
+
+    def set_delete(self):
+        self.to_delete = True
 
     def __init__(self, page_num: int, page_x0: float, page_y0: float, page_x1: float,
                  page_y1: float, document_x0: float, document_y0: float, document_x1: float,
@@ -71,6 +75,7 @@ class HierarchyElement:
         self.element = element
         self.text_content = text_content
         self.class_name = class_name
+        self.to_delete = False
 
     def __lt__(self, other: HierarchyElement):
         if self.document_y0 != other.document_y0:

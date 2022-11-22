@@ -28,6 +28,7 @@ class SigmaAldrichSdsParser(SdsParser):
     sds_rules: SigmaAldrichGhsSdsRules
 
     def __init__(self):
+        super().__init__()
         self.sds_rules = SigmaAldrichGhsSdsRules()
         self.register_injector(SigmaAldrichTableInjector())
 
@@ -36,7 +37,6 @@ class SigmaAldrichSdsParser(SdsParser):
         parsing_elements = self.import_parsing_elements(io)
         hierarchy = self.generate_initial_hierarchy(parsing_elements)
         section_node = self.generate_section_hierarchy(hierarchy)
-        print(section_node)
         return section_node
 
     def _hierarchy_to_ghs_sds(self, root: HierarchyNode) -> GhsSafetyDataSheet:
