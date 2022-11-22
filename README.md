@@ -14,15 +14,6 @@ Tungsten is available on PyPi via pip. To install, run the following command:
 pip install tungsten-sds
 ```
 
-### Note
-
-Currently, the version of `tabula-java` (1.0.5) included with `tabula-py` (2.5.1) by default is
-inadequate as it does not provide page number metadata. To fix this, you must create a custom build
-of the `tabula-java` JAR file. To do this, follow the instructions in the `tabula-java` repository:
-https://github.com/tabulapdf/tabula-java#building-from-source .
-Commit `50ff2df2e62644260d519e2d875a4db7d87d6746` has been tested to work with Tungsten. To enable
-this custom build, set the `TABULA_JAR` environment variable to the path of the JAR file.
-
 ## Usage Example
 
 ```python
