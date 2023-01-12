@@ -119,8 +119,8 @@ class SdsParser(metaclass=abc.ABCMeta):
                 while len(stack) != 0:
                     hand = stack.pop()
                     order.append(hand)
-                    for child in hand.children:
-                        stack.append(child)
+                    for j in range(len(hand.children)-1, 0, -1):
+                        stack.append(hand.children[j])
                 order.reverse()
                 for element in order:
                     if box.y1 <= element.data.page_y0 \
