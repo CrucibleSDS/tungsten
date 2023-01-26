@@ -5,8 +5,10 @@ import re
 from dataclasses import dataclass
 from typing import AnyStr, Optional
 
-from tungsten.parsers.globally_harmonized_system.safety_data_sheet import (
-    GhsSdsSectionTitle, GhsSdsSubsectionTitle)
+from tungsten.globally_harmonized_system.safety_data_sheet import (
+    GhsSdsSectionTitle,
+    GhsSdsSubsectionTitle
+)
 
 
 class GhsSdsRules(metaclass=abc.ABCMeta):

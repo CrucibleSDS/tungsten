@@ -6,7 +6,7 @@ from typing import IO
 import pdfminer.high_level as pdfm
 from pdfminer.layout import LAParams, LTText
 
-from tungsten.parsers.globally_harmonized_system.safety_data_sheet import (
+from tungsten.globally_harmonized_system.safety_data_sheet import (
     GhsSafetyDataSheet,
     GhsSdsItem,
     GhsSdsItemType,

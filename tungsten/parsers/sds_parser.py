@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import IO, Optional
 
-from tungsten.parsers.globally_harmonized_system.safety_data_sheet import (
+from tungsten.globally_harmonized_system.safety_data_sheet import (
     GhsSafetyDataSheet
 )
 from tungsten.parsers.parsing_hierarchy import HierarchyElement, HierarchyNode
