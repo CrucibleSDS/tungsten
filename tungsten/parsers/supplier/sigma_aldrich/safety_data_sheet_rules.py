@@ -3,13 +3,13 @@ from __future__ import annotations
 import re
 from typing import AnyStr
 
-from tungsten.parsers.globally_harmonized_system.safety_data_sheet import (
+from tungsten.globally_harmonized_system.safety_data_sheet import (
     GhsSdsSectionTitle,
-    GhsSdsSubsectionTitle,
+    GhsSdsSubsectionTitle
 )
-from tungsten.parsers.globally_harmonized_system.safety_data_sheet_rules import (
+from tungsten.globally_harmonized_system.safety_data_sheet_rules import (
     GhsSdsRules,
-    SubsectionDiscriminatorRules,
+    SubsectionDiscriminatorRules
 )
 
 
