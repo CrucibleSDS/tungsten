@@ -119,7 +119,7 @@ class SdsParser(metaclass=abc.ABCMeta):
                 while len(stack) != 0:
                     hand = stack.pop()
                     order.append(hand)
-                    for child in hand.children:
+                    for child in reversed(hand.children):
                         stack.append(child)
                 order.reverse()
                 for element in order:
