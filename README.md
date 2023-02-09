@@ -17,20 +17,44 @@ pip install tungsten-sds
 ## Usage Example
 
 ```python
+import json
 from pathlib import Path
 
-from tungsten import SigmaAldrichSdsParser
+from tungsten import SigmaAldrichSdsParser, SdsQueryFieldName, \
+    SigmaAldrichFieldMapper
 
 sds_parser = SigmaAldrichSdsParser()
-sds_path = Path("sigma_aldrich_w4502.pdf")
+sds_path = Path("CERILLIAN_L-001.pdf")
 
 # Convert PDF file to parsed data
 with open(sds_path, "rb") as f:
-    sds = sds_parser.parse_to_ghs_sds(f, sds_name=sds_path.stem)
+    sds = sds_parser.parse_to_ghs_sds(f)
+
+field_mapper = SigmaAldrichFieldMapper()
+
+fields = [
+    SdsQueryFieldName.PRODUCT_NAME,
+    SdsQueryFieldName.PRODUCT_NUMBER,
+    SdsQueryFieldName.PRODUCT_BRAND,
+    SdsQueryFieldName.RECOMMENDED_USE_AND_RESTRICTIONS,
+    SdsQueryFieldName.SUPPLIER_ADDRESS,
+    SdsQueryFieldName.SUPPLIER_TELEPHONE,
+    SdsQueryFieldName.SUPPLIER_FAX,
+    SdsQueryFieldName.EMERGENCY_TELEPHONE,
+    SdsQueryFieldName.IDENTIFICATION_OTHER,
+    SdsQueryFieldName.SUBSTANCE_CLASSIFICATION,
+    SdsQueryFieldName.PICTOGRAM,
+    SdsQueryFieldName.SIGNAL_WORD,
+    SdsQueryFieldName.HNOC_HAZARD,
+]
 
 # Serialize parsed data to JSON and dump to a file
 with open(sds_path.stem + ".json", "w") as f:
     sds.dump(f)
+    # Also print out mapped fields
+    for field in fields:
+        print(field.name, field_mapper.getField(field, json.loads(sds.dumps())))
+
 ```
 
 ## License
