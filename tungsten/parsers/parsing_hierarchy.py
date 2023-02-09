@@ -85,5 +85,5 @@ class HierarchyElement:
 
     def __str__(self):
         s = f"{self.text_content.strip() if self.text_content.strip() != '' else self.class_name}"\
-            f"(x{self.page_x0},y{self.page_y0}),(x{self.page_x1},y{self.page_y1})"
+            # f"(x{self.page_x0},y{self.page_y0}),(x{self.page_x1},y{self.page_y1})"
         return s

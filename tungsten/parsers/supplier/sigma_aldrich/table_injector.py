@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging as logging
 import time
+from dataclasses import dataclass
 from typing import IO
 
 import tabula
@@ -105,6 +106,7 @@ class SigmaAldrichTableInjector(SdsParserInjector):
         return table.data[1][0].text.strip()[1] == ")"
 
 
+@dataclass
 class TabulaTable:
     """Represents an auto-detected table by Tabula in a PDF."""
     extraction_method: str  # "lattice" or "stream"
@@ -230,6 +232,7 @@ class TabulaTable:
         return output
 
 
+@dataclass
 class TabulaTableCell:
     """Represents a cell in a :class:`TabulaTable`."""
     top: float  # Distance of top of cell from top of page, in points
