@@ -38,6 +38,12 @@ class GhsSafetyDataSheet:
         return json.dumps(self.to_dict(), cls=GhsSdsJsonEncoder, **kwargs)
 
 
+class GhsSdsMetaTitle(Enum):
+    VERSION = enum.auto()
+    REVISION_DATE = enum.auto()
+    PRINT_DATE = enum.auto()
+
+
 @dataclass
 class GhsSdsSection:
     """Representation of a GHS SDS section in :class:`GhsSafetyDataSheet`"""
@@ -68,6 +74,7 @@ class GhsSdsItem:
     Note that the UN GHS SDS structure is a representation of the SDS document itself, and not
     necessarily a structured representation of all fields and data."""
     type: GhsSdsItemType
+    name: str
     data: any
 
     def __str__(self):

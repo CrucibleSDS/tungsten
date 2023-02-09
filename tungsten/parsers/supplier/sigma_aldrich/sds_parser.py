@@ -93,10 +93,30 @@ class SigmaAldrichSdsParser(SdsParser):
                 .discriminate_subsection(child.data.text_content, context)
             ghs_subsections.append(GhsSdsSubsection(
                 subsection_title,
-                [GhsSdsItem(GhsSdsItemType.LIST, subchild) for subchild in child.children],
+                [GhsSdsItem(
+                    type=GhsSdsItemType.FIELD,
+                    name=str(subchild.data),
+                    data=self.flatten_to_children_str(subchild)) for subchild in child.children],
                 child.data.text_content
             ))
         return ghs_subsections
+
+    @staticmethod
+    def flatten_to_children_str(head: HierarchyNode) -> list[str]:
+        """Flattens an entire tree of HierarchyNodes to a list of strings (DFS)"""
+        names: list[str] = []
+        stack: list[HierarchyNode] = head.children
+        while len(stack):
+            # Pop
+            hand = stack.pop()
+
+            # Process
+            names.append(str(hand.data))
+
+            # Push
+            for child in hand.children:
+                stack.append(child)
+        return names
 
     def generate_initial_hierarchy(self,
                                    parsing_elements: list[HierarchyElement]) -> HierarchyNode:
