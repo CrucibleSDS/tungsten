@@ -103,7 +103,10 @@ class SigmaAldrichTableInjector(SdsParserInjector):
     def reject_table(table: TabulaTable) -> bool:
         # TODO this is a temporary solution
         # TODO reject more tables that are false positives
-        return table.data[1][0].text.strip()[1] == ")"
+        try:
+            return table.data[1][0].text.strip()[1] == ")"
+        except IndexError:
+            return True
 
 
 @dataclass

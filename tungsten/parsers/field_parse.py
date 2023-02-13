@@ -16,7 +16,7 @@ class FieldMapper(metaclass=abc.ABCMeta):
             target = command.match(target)
         try:
             result = post_process(target)
-        except (KeyError, AttributeError):
+        except (KeyError, AttributeError, TypeError, IndexError):
             result = None
         return result
 
