@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tungsten-sds"
-version = "0.5.0"
+version = "0.6.0"
 description = "An MSDS parser."
 authors = ["Dennis Pham <dennis@dennispham.me>", "Brian Lu <me@greencappuccino.net>"]
 license = "MIT"
@@ -14,7 +14,6 @@ include = ["tabula-1.0.6-SNAPSHOT-jar-with-dependencies.jar"]
 "pdfminer.six" = "^20220524"
 python = "^3.10"
 tabula-py = "^2.5.1"
-logging = "^0.4.9.6"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^5.0.4"
