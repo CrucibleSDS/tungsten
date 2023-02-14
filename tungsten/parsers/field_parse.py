@@ -56,6 +56,7 @@ class SdsQueryFieldName(Enum):
 
     PRODUCT_NAME = enum.auto()
     PRODUCT_NUMBER = enum.auto()
+    CAS_NUMBER = enum.auto()
     PRODUCT_BRAND = enum.auto()
     RECOMMENDED_USE_AND_RESTRICTIONS = enum.auto()  # Ref. RECOMMENDED_USE_AND_RESTRICTIONS
 
