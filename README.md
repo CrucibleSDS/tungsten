@@ -35,6 +35,7 @@ field_mapper = SigmaAldrichFieldMapper()
 fields = [
     SdsQueryFieldName.PRODUCT_NAME,
     SdsQueryFieldName.PRODUCT_NUMBER,
+    SdsQueryFieldName.CAS_NUMBER,
     SdsQueryFieldName.PRODUCT_BRAND,
     SdsQueryFieldName.RECOMMENDED_USE_AND_RESTRICTIONS,
     SdsQueryFieldName.SUPPLIER_ADDRESS,

@@ -33,6 +33,15 @@ class SigmaAldrichFieldMapper(FieldMapper):
                               where_value=re.compile(r"Product\sNumber", re.IGNORECASE)),
                 SelectCommand(key="data")
             ], lambda x: re.match(r"\:?\s*(.*)", x[0]).group(1)),
+            SdsQueryFieldName.CAS_NUMBER: ([
+                SelectCommand(key="sections"),
+                SelectCommand(key="title", where_value="IDENTIFICATION"),
+                SelectCommand(key="subsections"),
+                SelectCommand(key="title", where_value="GHS_PRODUCT_IDENTIFIER"),
+                SelectCommand(key="items"),
+                SelectCommand(key="name", where_value=re.compile(r"CAS", re.IGNORECASE)),
+                SelectCommand(key="data")
+            ], lambda x: re.match(r"\:?\s*(.*)", x[0]).group(1)),
             SdsQueryFieldName.PRODUCT_BRAND: ([
                 SelectCommand(key="sections"),
                 SelectCommand(key="title", where_value="IDENTIFICATION"),
