@@ -19,6 +19,7 @@ class GhsSafetyDataSheet:
     Note that the UN GHS SDS structure is a representation of the SDS document itself, and not
     necessarily a structured representation of all fields and data."""
     name: str
+    meta: dict
     sections: list[GhsSdsSection]
 
     def __str__(self):

@@ -3,6 +3,7 @@ from __future__ import annotations
 import abc
 import enum
 import logging
+import typing
 from dataclasses import dataclass
 from enum import Enum
 from typing import IO, Optional
@@ -29,10 +30,15 @@ class SdsParser(metaclass=abc.ABCMeta):
         for injector in self.injectors:
             injections += injector.generate_injections(io)
         # Inject collected injections into the text hierarchy
-        self._process_injections(injections, hierarchy)
-        self.logger.info(hierarchy)
+        self._process_injections(
+            list(filter(lambda x: isinstance(x, Injection), injections)), hierarchy)
         # Create GHS SDS document from result
-        return self._hierarchy_to_ghs_sds(hierarchy)
+        ghs_sds = self._hierarchy_to_ghs_sds(hierarchy)
+        # Modify GHS with meta injections
+        for meta in list(filter(lambda x: isinstance(x, dict), injections)):
+            ghs_sds.meta.update(typing.cast(dict, meta))
+
+        return ghs_sds
 
     @abc.abstractmethod
     def _parse_to_hierarchy(self, io: IO[bytes]) -> HierarchyNode:
@@ -47,7 +53,7 @@ class SdsParser(metaclass=abc.ABCMeta):
         """Registers an injector class for use in the parsing pipeline."""
         self.injectors.append(injector)
 
-    def _process_injections(self, injections: list[Injection], root: HierarchyNode) -> None:
+    def _process_injections(self, injections: list[Injection | dict], root: HierarchyNode) -> None:
         """Operates on a hierarchy with gathered injections."""
         # First step is to delete original text elements to match the specific overwrite condition
         # This feels like a LeetCode problem, I wonder if there's a better way to do this?
@@ -132,7 +138,7 @@ class SdsParser(metaclass=abc.ABCMeta):
 
 class SdsParserInjector(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def generate_injections(self, io: IO[bytes]) -> list[Injection]:
+    def generate_injections(self, io: IO[bytes]) -> list[Injection | dict]:
         pass
 
 

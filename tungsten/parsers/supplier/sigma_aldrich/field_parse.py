@@ -113,13 +113,8 @@ class SigmaAldrichFieldMapper(FieldMapper):
                 SelectCommand(key="items")
             ], lambda x: "\n".join(map(lambda y: y["name"], x))),
             SdsQueryFieldName.PICTOGRAM: ([
-                SelectCommand(key="sections"),
-                SelectCommand(key="title", where_value="HAZARDS"),
-                SelectCommand(key="subsections"),
-                SelectCommand(key="title", where_value="GHS_LABEL_ELEMENTS"),
-                SelectCommand(key="items"),
-                SelectCommand(key="name", where_value=re.compile(r"Pictogram", re.IGNORECASE)),
-                SelectCommand(key="data")
+                SelectCommand(key="meta"),
+                SelectCommand(key="pictograms")
             ], lambda x: x),
             SdsQueryFieldName.SIGNAL_WORD: ([
                 SelectCommand(key="sections"),
