@@ -35,7 +35,7 @@ class SdsParser(metaclass=abc.ABCMeta):
         # Create GHS SDS document from result
         ghs_sds = self._hierarchy_to_ghs_sds(hierarchy)
         # Modify GHS with meta injections
-        for meta in list(filter(lambda x: isinstance(x, dict), injections)):
+        for meta in filter(lambda x: isinstance(x, dict), injections):
             ghs_sds.meta.update(typing.cast(dict, meta))
 
         return ghs_sds
