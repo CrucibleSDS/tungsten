@@ -16,6 +16,9 @@ from tungsten.globally_harmonized_system.safety_data_sheet import (
 )
 from tungsten.parsers.parsing_hierarchy import HierarchyElement, HierarchyNode
 from tungsten.parsers.sds_parser import SdsParser
+from tungsten.parsers.supplier.sigma_aldrich.pictogram_injector import (
+    SigmaAldrichPictogramInjector
+)
 from tungsten.parsers.supplier.sigma_aldrich.safety_data_sheet_rules import (
     SigmaAldrichGhsSdsRules
 )
@@ -31,6 +34,7 @@ class SigmaAldrichSdsParser(SdsParser):
         super().__init__()
         self.sds_rules = SigmaAldrichGhsSdsRules()
         self.register_injector(SigmaAldrichTableInjector())
+        self.register_injector(SigmaAldrichPictogramInjector())
 
     def _parse_to_hierarchy(self, io: IO[bytes]) -> HierarchyNode:
         # noinspection PyTypeChecker
@@ -42,6 +46,7 @@ class SigmaAldrichSdsParser(SdsParser):
     def _hierarchy_to_ghs_sds(self, root: HierarchyNode) -> GhsSafetyDataSheet:
         ghs_sds = GhsSafetyDataSheet(
             name="default",  # TODO figure out what to do with names
+            meta={},
             sections=self.identify_ghs_sections(root.children)
         )
         return ghs_sds
