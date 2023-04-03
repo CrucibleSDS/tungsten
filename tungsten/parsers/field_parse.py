@@ -9,9 +9,13 @@ from typing import Callable
 
 
 class FieldMapper(metaclass=abc.ABCMeta):
-    def getField(self, field: SdsQueryFieldName, target: dict):
-        mapping = self.getFieldMappings(field)
+    def get_field(self, field: SdsQueryFieldName, target: dict):
+        mapping = self.get_field_mappings(field)
         commands, post_process = mapping
+        return self.execute_query(target, commands, post_process)
+
+    @staticmethod
+    def execute_query(target: dict, commands: list[SelectCommand], post_process):
         for command in commands:
             target = command.match(target)
         try:
@@ -21,7 +25,7 @@ class FieldMapper(metaclass=abc.ABCMeta):
         return result
 
     @abc.abstractmethod
-    def getFieldMappings(self, field: SdsQueryFieldName) -> tuple[list[SelectCommand], Callable]:
+    def get_field_mappings(self, field: SdsQueryFieldName) -> tuple[list[SelectCommand], Callable]:
         pass
 
 
@@ -73,5 +77,6 @@ class SdsQueryFieldName(Enum):
 
     PICTOGRAM = enum.auto()  # Ref. (INSIDE OF!!!) GHS_LABEL_ELEMENTS
     SIGNAL_WORD = enum.auto()  # Ref. (INSIDE OF!!!) GHS_LABEL_ELEMENTS
+    STATEMENTS = enum.auto()  # Ref. (INSIDE OF!!!) GHS_LABEL_ELEMENTS
 
     HNOC_HAZARD = enum.auto()  # Ref. OTHER_HAZARDS, HAZARDS_OTHER. Data dump! No Schema!

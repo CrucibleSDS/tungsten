@@ -46,6 +46,7 @@ fields = [
     SdsQueryFieldName.SUBSTANCE_CLASSIFICATION,
     SdsQueryFieldName.PICTOGRAM,
     SdsQueryFieldName.SIGNAL_WORD,
+    SdsQueryFieldName.STATEMENTS,
     SdsQueryFieldName.HNOC_HAZARD,
 ]
 
@@ -54,7 +55,7 @@ with open(sds_path.stem + ".json", "w") as f:
     sds.dump(f)
     # Also print out mapped fields
     for field in fields:
-        print(field.name, field_mapper.getField(field, json.loads(sds.dumps())))
+        print(field.name, field_mapper.get_field(field, json.loads(sds.dumps())))
 
 ```
 

@@ -9,7 +9,7 @@ from tungsten.parsers.field_parse import (
 
 
 class SigmaAldrichFieldMapper(FieldMapper):
-    def getFieldMappings(self, field: SdsQueryFieldName) -> tuple[list[SelectCommand], Callable]:
+    def get_field_mappings(self, field: SdsQueryFieldName) -> tuple[list[SelectCommand], Callable]:
         return {
             # SdsQueryFieldName.META_VERSION: [],
             # SdsQueryFieldName.META_REVISION_DATE: [],
@@ -135,6 +135,19 @@ class SigmaAldrichFieldMapper(FieldMapper):
                 SelectCommand(key="name", where_value=re.compile(r"Signal\sword", re.IGNORECASE)),
                 SelectCommand(key="data")
             ], lambda x: re.search(r"(danger|warning)", "".join(x), re.IGNORECASE).group(1)),
+            SdsQueryFieldName.STATEMENTS: ([
+                SelectCommand(key="sections"),
+                SelectCommand(key="title", where_value="HAZARDS"),
+                SelectCommand(key="subsections")
+            ], lambda x: sorted(  # Forgive me whoever witnesses this bodge
+                [*({str(match) for item in (self.execute_query(x, [
+                    SelectCommand(key="title", where_value="GHS_LABEL_ELEMENTS"),
+                    SelectCommand(key="items")], lambda y: y) or [])
+                    for match in re.findall(r"([HP]\d{3})", item["name"])} |
+                    {str(match) for item in (self.execute_query(x, [
+                        SelectCommand(key="title", where_value="HAZARDS_OTHER"),
+                        SelectCommand(key="items")], lambda y: y) or [])
+                        for match in re.findall(r"([HP]\d{3})", item["name"])})])),
             SdsQueryFieldName.HNOC_HAZARD: ([
                 SelectCommand(key="sections"),
                 SelectCommand(key="title", where_value="HAZARDS"),

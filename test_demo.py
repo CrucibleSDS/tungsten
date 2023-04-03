@@ -45,6 +45,7 @@ def main():
         SdsQueryFieldName.SUBSTANCE_CLASSIFICATION,
         SdsQueryFieldName.PICTOGRAM,
         SdsQueryFieldName.SIGNAL_WORD,
+        SdsQueryFieldName.STATEMENTS,
         SdsQueryFieldName.HNOC_HAZARD,
     ]
 
@@ -62,7 +63,7 @@ def main():
                       'w') as fw:
                 temp = {}
                 for field in fields:
-                    temp[field.name] = field_mapper.getField(field, json.loads(parsed.dumps()))
+                    temp[field.name] = field_mapper.get_field(field, json.loads(parsed.dumps()))
                 json.dump(temp, fw)
             # table_parser.generate_injections(f)
         logging.info(f'Parse complete in {perf_counter() - file_start_time} seconds.')
