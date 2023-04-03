@@ -106,11 +106,11 @@ class SigmaAldrichSdsParser(SdsParser):
             ))
         return ghs_subsections
 
-    @staticmethod
-    def flatten_to_children_str(head: HierarchyNode) -> list[str]:
+    def flatten_to_children_str(self, head: HierarchyNode) -> list[str]:
         """Flattens an entire tree of HierarchyNodes to a list of strings (DFS)"""
         names: list[str] = []
         stack: list[HierarchyNode] = head.children
+        stack.reverse()
         while len(stack):
             # Pop
             hand = stack.pop()
@@ -119,8 +119,7 @@ class SigmaAldrichSdsParser(SdsParser):
             names.append(str(hand.data))
 
             # Push
-            for child in hand.children:
-                stack.append(child)
+            stack.extend(child for child in reversed(hand.children))
         return names
 
     def generate_initial_hierarchy(self,

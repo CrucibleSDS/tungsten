@@ -69,7 +69,8 @@ class SigmaAldrichFieldMapper(FieldMapper):
                 SelectCommand(key="items"),
                 SelectCommand(key="name", where_value=re.compile(r"Company", re.IGNORECASE)),
                 SelectCommand(key="data")
-            ], lambda x: re.match(r"\:?\s*(.*)", "".join(x), re.DOTALL).group(1)),
+            ], lambda x: re.match(r"\:?\s*(.*)",
+                                  " ".join(y.strip() for y in x), re.DOTALL).group(1)),
             SdsQueryFieldName.SUPPLIER_TELEPHONE: ([
                 SelectCommand(key="sections"),
                 SelectCommand(key="title", where_value="IDENTIFICATION"),
