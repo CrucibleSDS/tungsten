@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import glob
+import json
 import logging
 from pathlib import Path
 from time import perf_counter
 
+from tungsten import SdsQueryFieldName, SigmaAldrichFieldMapper
 from tungsten.parsers.supplier.sigma_aldrich.sds_parser import (
     SigmaAldrichSdsParser
 )
@@ -21,11 +23,30 @@ def main():
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
     handler.setStream(open("table.log", "w", encoding="utf-8"))
-    logging.basicConfig(level=logging.DEBUG, handlers=[handler])
-    # logging.basicConfig(level=logging.INFO, handlers=[handler])
+    # logging.basicConfig(level=logging.DEBUG, handlers=[handler])
+    logging.basicConfig(level=logging.INFO, handlers=[handler])
 
     parser = SigmaAldrichSdsParser()
     # table_parser = SigmaAldrichTableInjector()
+
+    field_mapper = SigmaAldrichFieldMapper()
+
+    fields = [
+        SdsQueryFieldName.PRODUCT_NAME,
+        SdsQueryFieldName.PRODUCT_NUMBER,
+        SdsQueryFieldName.CAS_NUMBER,
+        SdsQueryFieldName.PRODUCT_BRAND,
+        SdsQueryFieldName.RECOMMENDED_USE_AND_RESTRICTIONS,
+        SdsQueryFieldName.SUPPLIER_ADDRESS,
+        SdsQueryFieldName.SUPPLIER_TELEPHONE,
+        SdsQueryFieldName.SUPPLIER_FAX,
+        SdsQueryFieldName.EMERGENCY_TELEPHONE,
+        SdsQueryFieldName.IDENTIFICATION_OTHER,
+        SdsQueryFieldName.SUBSTANCE_CLASSIFICATION,
+        SdsQueryFieldName.PICTOGRAM,
+        SdsQueryFieldName.SIGNAL_WORD,
+        SdsQueryFieldName.HNOC_HAZARD,
+    ]
 
     for filename in glob.glob(str(Path('msds', '*.pdf').absolute())):
         file_start_time = perf_counter()
@@ -36,6 +57,13 @@ def main():
                            str(Path(filename).relative_to(Path('msds').absolute())) + ".json"),
                       'w') as fw:
                 parsed.dump(fw)
+            with open(Path('msds', 'mapped',
+                           str(Path(filename).relative_to(Path('msds').absolute())) + ".json"),
+                      'w') as fw:
+                temp = {}
+                for field in fields:
+                    temp[field.name] = field_mapper.getField(field, json.loads(parsed.dumps()))
+                json.dump(temp, fw)
             # table_parser.generate_injections(f)
         logging.info(f'Parse complete in {perf_counter() - file_start_time} seconds.')
 

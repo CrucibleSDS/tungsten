@@ -78,8 +78,8 @@ class HierarchyElement:
         self.to_delete = False
 
     def __lt__(self, other: HierarchyElement):
-        if self.document_y0 != other.document_y0:
-            return self.document_y0 < other.document_y0
+        if self.document_y1 != other.document_y1:
+            return self.document_y1 < other.document_y1
         else:
             return self.document_x0 < other.document_x0
 
