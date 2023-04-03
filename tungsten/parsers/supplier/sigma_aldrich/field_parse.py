@@ -140,11 +140,11 @@ class SigmaAldrichFieldMapper(FieldMapper):
                 SelectCommand(key="title", where_value="HAZARDS"),
                 SelectCommand(key="subsections")
             ], lambda x: sorted(  # Forgive me whoever witnesses this bodge
-                [*({str(match) for item in (self.execute_query(x, [
+                [*({match for item in (self.execute_query(x, [
                     SelectCommand(key="title", where_value="GHS_LABEL_ELEMENTS"),
                     SelectCommand(key="items")], lambda y: y) or [])
                     for match in re.findall(r"([HP]\d{3})", item["name"])} |
-                    {str(match) for item in (self.execute_query(x, [
+                    {match for item in (self.execute_query(x, [
                         SelectCommand(key="title", where_value="HAZARDS_OTHER"),
                         SelectCommand(key="items")], lambda y: y) or [])
                         for match in re.findall(r"([HP]\d{3})", item["name"])})])),
