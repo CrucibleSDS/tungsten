@@ -1,6 +1,6 @@
 <div align="center">
     <a align="center" href="https://pypi.org/project/tungsten-sds/">
-        <img src="https://raw.githubusercontent.com/Den4200/tungsten/main/assets/tungsten-wide-dark-bg-pad.png" align="center" alt="Tungsten" />
+        <img src="https://raw.githubusercontent.com/CrucibleSDS/tungsten/main/assets/tungsten-wide-dark-bg-pad.png" align="center" alt="Tungsten" />
     </a>
     <h1 align="center">Tungsten</h1>
     <p align="center">A material safety data sheet parser.</p>
