@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tungsten-sds"
-version = "0.7.0"
+version = "0.8.0"
 description = "An MSDS parser."
 authors = ["Dennis Pham <dennis@dennispham.me>", "Brian Lu <me@greencappuccino.net>"]
 license = "MIT"
